@@ -10,36 +10,53 @@ void GameViewView::setupScreen()
 {
     GameViewViewBase::setupScreen();
 
-    // 1. Configure Matrix Container (Centered: 60 to 180px horizontally)
-    // Grid size: 10 columns * 12px = 120px wide, 20 rows * 12px = 240px high.
-    // Adding 1px for the last lines: 121x241
-    matrixContainer.setPosition(60, 40, 121, 241);
+    // 1. Configure Matrix Container (Centered: 58 to 182px horizontally)
+    // Inner Grid size: 10 columns * 12px = 120px wide, 20 rows * 12px = 240px high.
+    // Total size with 2px border on all sides: 124x244
+    matrixContainer.setPosition(58, 38, 124, 244);
     
-    // 2. Matrix Background (Oxford Blue #0A1128)
-    matrixBackground.setPosition(0, 0, 121, 241);
+    // 2. Matrix Border (Steel Blue #1B2A41, 2px thickness)
+    touchgfx::colortype borderColor = touchgfx::Color::getColorFromRGB(0x1B, 0x2A, 0x41);
+    
+    // Top border
+    matrixBorder[0].setPosition(0, 0, 124, 2);
+    // Bottom border
+    matrixBorder[1].setPosition(0, 242, 124, 2);
+    // Left border
+    matrixBorder[2].setPosition(0, 0, 2, 244);
+    // Right border
+    matrixBorder[3].setPosition(122, 0, 2, 244);
+
+    for (int i = 0; i < 4; i++)
+    {
+        matrixBorder[i].setColor(borderColor);
+        matrixContainer.add(matrixBorder[i]);
+    }
+
+    // 3. Matrix Background (Oxford Blue #0A1128)
+    matrixBackground.setPosition(2, 2, 120, 240);
     matrixBackground.setColor(touchgfx::Color::getColorFromRGB(0x0A, 0x11, 0x28));
     matrixContainer.add(matrixBackground);
 
-    // 3. Grid Lines (Steel Blue #1B2A41)
-    touchgfx::colortype gridColor = touchgfx::Color::getColorFromRGB(0x1B, 0x2A, 0x41);
-
-    // Vertical lines
-    for (int i = 0; i <= MATRIX_COLS; i++)
+    // 4. Checkerboard Pattern (Subtle highlights #0E1733)
+    touchgfx::colortype tileColor = touchgfx::Color::getColorFromRGB(0x0E, 0x17, 0x33);
+    int tileIndex = 0;
+    for (int row = 0; row < MATRIX_ROWS; row++)
     {
-        verticalLines[i].setPosition(i * CELL_SIZE, 0, 1, 241);
-        verticalLines[i].setColor(gridColor);
-        matrixContainer.add(verticalLines[i]);
+        for (int col = 0; col < MATRIX_COLS; col++)
+        {
+            // Add a tile only for every second cell to create "interleaved" pattern
+            if ((row + col) % 2 == 0)
+            {
+                matrixTiles[tileIndex].setPosition(2 + col * CELL_SIZE, 2 + row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                matrixTiles[tileIndex].setColor(tileColor);
+                matrixContainer.add(matrixTiles[tileIndex]);
+                tileIndex++;
+            }
+        }
     }
 
-    // Horizontal lines
-    for (int i = 0; i <= MATRIX_ROWS; i++)
-    {
-        horizontalLines[i].setPosition(0, i * CELL_SIZE, 121, 1);
-        horizontalLines[i].setColor(gridColor);
-        matrixContainer.add(horizontalLines[i]);
-    }
-
-    // 4. Add Matrix to the Screen
+    // 5. Add Matrix to the Screen
     add(matrixContainer);
 
     // 5. Left Sidebar (0-60px)

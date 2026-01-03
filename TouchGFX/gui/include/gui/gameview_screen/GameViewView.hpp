@@ -25,8 +25,10 @@ protected:
 
     touchgfx::Container matrixContainer;
     touchgfx::Box matrixBackground;
-    touchgfx::Box verticalLines[MATRIX_COLS + 1];
-    touchgfx::Box horizontalLines[MATRIX_ROWS + 1];
+    touchgfx::Box matrixBorder[4]; // Top, Bottom, Left, Right border
+    
+    // 100 tiles for checkerboard pattern (every second cell)
+    touchgfx::Box matrixTiles[5 * MATRIX_ROWS]; 
 
     // Left Sidebar
     touchgfx::Image holdPanel;
