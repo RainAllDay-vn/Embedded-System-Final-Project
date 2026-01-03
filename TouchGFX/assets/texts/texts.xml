@@ -4,7 +4,29 @@
     <Language Id="GB" />
   </Languages>
   <Texts>
-    <TextGroup Id="Group1" />
+    <TextGroup Id="Group1">
+      <Text Id="HOLD" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">HOLD</Translation>
+      </Text>
+      <Text Id="NEXT" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">NEXT</Translation>
+      </Text>
+      <Text Id="LEVEL" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">LEVEL</Translation>
+      </Text>
+      <Text Id="LINES" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">LINES</Translation>
+      </Text>
+      <Text Id="SCORE" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">SCORE</Translation>
+      </Text>
+      <Text Id="GOAL" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">GOAL</Translation>
+      </Text>
+      <Text Id="WILDCARD" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">&lt;v&gt;</Translation>
+      </Text>
+    </TextGroup>
   </Texts>
   <Typographies>
     <Typography Id="Default" Font="verdana.ttf" Size="20" Bpp="4" IsVector="no" Direction="LTR" FallbackCharacter="?" />
