@@ -194,7 +194,16 @@ void GameViewView::setupScreen()
     menuBtnContainer.add(menuButton);
     add(menuBtnContainer);
 
-    // 9. Initialize Block Bitmaps mapping
+    // 9. Game Over Label (Hidden initially)
+    gameOverLabel.setTypedText(touchgfx::TypedText(T_GAME_OVER));
+    gameOverLabel.setXY(0, 140);
+    gameOverLabel.setHeight(40);
+    gameOverLabel.setWidth(240);
+    gameOverLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0x00, 0x00));
+    gameOverLabel.setVisible(false);
+    add(gameOverLabel);
+
+    // 10. Initialize Block Bitmaps mapping
     blockBitmaps[Tetris::I] = BITMAP_BLOCK_I_ID;
     blockBitmaps[Tetris::J] = BITMAP_BLOCK_J_ID;
     blockBitmaps[Tetris::L] = BITMAP_BLOCK_L_ID;
@@ -277,6 +286,31 @@ void GameViewView::updateBoard()
         // Panel at (186, 40), size 48x48. Blocks 12x12.
         // Center a 4x4 matrix (48x48) inside panel.
         drawPiece(nextType, 0, 0, 0, previewBlocks, 186, 40, true);
+    }
+
+    // Update Sidebars (Score, Level, Lines, Goal)
+    Unicode::snprintf(scoreBuffer, 12, "%06d", presenter->getScore());
+    scoreValue.invalidate();
+
+    Unicode::snprintf(levelBuffer, 8, "%02d", presenter->getLevel());
+    levelValue.invalidate();
+
+    Unicode::snprintf(linesBuffer, 8, "%03d", presenter->getLines());
+    linesValue.invalidate();
+
+    // Goal is next level requirement (Level * 10)
+    Unicode::snprintf(goalBuffer, 8, "%03d", presenter->getLevel() * 10);
+    goalValue.invalidate();
+
+    // Handle Game Over
+    if (presenter->getIsGameOver())
+    {
+        gameOverLabel.setVisible(true);
+        gameOverLabel.invalidate();
+    }
+    else
+    {
+        gameOverLabel.setVisible(false);
     }
 
     invalidate();

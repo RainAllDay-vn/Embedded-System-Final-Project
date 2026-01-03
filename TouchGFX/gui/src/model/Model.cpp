@@ -8,8 +8,13 @@ Model::Model() :
     modelListener(0),
     currentType(Tetris::NONE),
     nextType(Tetris::NONE),
+    isGameOver(false),
+    score(0),
+    level(1),
+    linesCount(0),
+    goalLines(10),
     tickCounter(0),
-    dropSpeed(60) // Assuming 60Hz tick, drop every 1 second
+    dropSpeed(60)
 {
     // Initialize grid
     for (int y = 0; y < 20; y++)
@@ -20,16 +25,18 @@ Model::Model() :
         }
     }
 
-    // Seed random (simple approach for now)
     srand(static_cast<unsigned int>(time(NULL)));
-
-    // Generate initial next piece and spawn first
     nextType = getRandomPiece();
     spawnPiece();
 }
 
 void Model::tick()
 {
+    if (isGameOver)
+    {
+        return;
+    }
+
     tickCounter++;
     if (tickCounter >= dropSpeed)
     {
@@ -45,6 +52,7 @@ void Model::tick()
 
 void Model::moveLeft()
 {
+    if (isGameOver) return;
     if (!isCollision(currentX - 1, currentY, currentRotation))
     {
         currentX--;
@@ -53,6 +61,7 @@ void Model::moveLeft()
 
 void Model::moveRight()
 {
+    if (isGameOver) return;
     if (!isCollision(currentX + 1, currentY, currentRotation))
     {
         currentX++;
@@ -61,6 +70,7 @@ void Model::moveRight()
 
 void Model::rotate()
 {
+    if (isGameOver) return;
     int nextRotation = (currentRotation + 1) % 4;
     if (!isCollision(currentX, currentY, nextRotation))
     {
@@ -70,6 +80,7 @@ void Model::rotate()
 
 void Model::step()
 {
+    if (isGameOver) return;
     if (!isCollision(currentX, currentY + 1, currentRotation))
     {
         currentY++;
@@ -82,7 +93,6 @@ void Model::step()
 
 void Model::lockPiece()
 {
-    // Copy falling piece into grid
     for (int row = 0; row < 4; row++)
     {
         for (int col = 0; col < 4; col++)
@@ -99,9 +109,64 @@ void Model::lockPiece()
         }
     }
 
-    // TODO: Check for cleared lines here
-
+    checkLines();
     spawnPiece();
+}
+
+void Model::checkLines()
+{
+    int clearedInThisStep = 0;
+
+    for (int y = 19; y >= 0; y--)
+    {
+        bool isFull = true;
+        for (int x = 0; x < 10; x++)
+        {
+            if (grid[y][x] == -1)
+            {
+                isFull = false;
+                break;
+            }
+        }
+
+        if (isFull)
+        {
+            clearedInThisStep++;
+            // Shift everything above down
+            for (int shiftY = y; shiftY > 0; shiftY--)
+            {
+                for (int x = 0; x < 10; x++)
+                {
+                    grid[shiftY][x] = grid[shiftY - 1][x];
+                }
+            }
+            // Clear top line
+            for (int x = 0; x < 10; x++)
+            {
+                grid[0][x] = -1;
+            }
+            // Re-check this same Y index since it now contains the row from above
+            y++;
+        }
+    }
+
+    if (clearedInThisStep > 0)
+    {
+        linesCount += clearedInThisStep;
+        
+        // Simple scoring: 100, 300, 500, 800
+        int points[] = {0, 100, 300, 500, 800};
+        score += points[clearedInThisStep] * level;
+
+        // Level up every 10 lines
+        if (linesCount >= goalLines)
+        {
+            level++;
+            goalLines += 10;
+            // Increase speed (minimum 5 ticks)
+            if (dropSpeed > 10) dropSpeed -= 5;
+        }
+    }
 }
 
 bool Model::isCollision(int x, int y, int rotation)
@@ -115,17 +180,8 @@ bool Model::isCollision(int x, int y, int rotation)
                 int gridX = x + col;
                 int gridY = y + row;
 
-                // Wall collision
-                if (gridX < 0 || gridX >= 10 || gridY >= 20)
-                {
-                    return true;
-                }
-
-                // Grid collision (landed pieces)
-                if (gridY >= 0 && grid[gridY][gridX] != -1)
-                {
-                    return true;
-                }
+                if (gridX < 0 || gridX >= 10 || gridY >= 20) return true;
+                if (gridY >= 0 && grid[gridY][gridX] != -1) return true;
             }
         }
     }
@@ -136,19 +192,13 @@ void Model::spawnPiece()
 {
     currentType = nextType;
     nextType = getRandomPiece();
-
-    // Spawn at top center
     currentX = 3;
     currentY = 0;
     currentRotation = 0;
 
-    // Check if new piece immediately collides (Game Over)
     if (isCollision(currentX, currentY, currentRotation))
     {
-        // Reset grid for now
-        for (int y = 0; y < 20; y++)
-            for (int x = 0; x < 10; x++)
-                grid[y][x] = -1;
+        isGameOver = true;
     }
 }
 

@@ -59,6 +59,8 @@ protected:
     touchgfx::TextAreaWithOneWildcard goalValue;
     touchgfx::Unicode::UnicodeChar goalBuffer[8];
 
+    touchgfx::TextArea gameOverLabel;
+
     // Header & Footer
     touchgfx::Image logo;
     touchgfx::TextArea pauseButton;

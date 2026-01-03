@@ -31,6 +31,11 @@ public:
     int getCurrentRotation() const { return currentRotation; }
     signed char getGridValue(int x, int y) const { return grid[y][x]; }
 
+    bool getIsGameOver() const { return isGameOver; }
+    int getScore() const { return score; }
+    int getLevel() const { return level; }
+    int getLines() const { return linesCount; }
+
 protected:
     ModelListener* modelListener;
 
@@ -42,11 +47,18 @@ protected:
 
     Tetris::TetrominoType nextType;
 
+    bool isGameOver;
+    int score;
+    int level;
+    int linesCount;
+    int goalLines;
+
     int tickCounter;
     int dropSpeed; // Ticks per drop
 
     void spawnPiece();
     void lockPiece();
+    void checkLines();
     bool isCollision(int x, int y, int rotation);
     Tetris::TetrominoType getRandomPiece();
 };
