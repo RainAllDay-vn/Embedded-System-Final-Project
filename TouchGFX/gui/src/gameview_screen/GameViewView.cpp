@@ -72,12 +72,15 @@ void GameViewView::setupScreen()
 
     // LEVEL
     levelLabel.setTypedText(touchgfx::TypedText(T_LEVEL));
-    levelLabel.setXY(6, 120);
+    levelLabel.setXY(0, 120);
+    levelLabel.setWidth(60);
     levelLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     add(levelLabel);
 
     levelValue.setTypedText(touchgfx::TypedText(T_WILDCARD));
-    levelValue.setXY(6, 140);
+    levelValue.setXY(0, 140);
+    levelValue.setWidth(60);
+    levelValue.setHeight(20);
     levelValue.setColor(touchgfx::Color::getColorFromRGB(0x00, 0xFF, 0x41)); // Neon Green
     Unicode::snprintf(levelBuffer, 8, "01");
     levelValue.setWildcard(levelBuffer);
@@ -85,12 +88,15 @@ void GameViewView::setupScreen()
 
     // LINES
     linesLabel.setTypedText(touchgfx::TypedText(T_LINES));
-    linesLabel.setXY(6, 230);
+    linesLabel.setXY(0, 230);
+    linesLabel.setWidth(60);
     linesLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     add(linesLabel);
 
     linesValue.setTypedText(touchgfx::TypedText(T_WILDCARD));
-    linesValue.setXY(6, 250);
+    linesValue.setXY(0, 250);
+    linesValue.setWidth(60);
+    linesValue.setHeight(20);
     linesValue.setColor(touchgfx::Color::getColorFromRGB(0x00, 0xFB, 0xFF)); // Neon Cyan
     Unicode::snprintf(linesBuffer, 8, "000");
     linesValue.setWildcard(linesBuffer);
@@ -103,7 +109,8 @@ void GameViewView::setupScreen()
     add(nextPanel);
 
     nextLabel.setTypedText(touchgfx::TypedText(T_NEXT));
-    nextLabel.setXY(186, 25);
+    nextLabel.setXY(180, 25);
+    nextLabel.setWidth(60);
     nextLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     add(nextLabel);
 
@@ -113,12 +120,15 @@ void GameViewView::setupScreen()
     add(scorePanel);
 
     scoreLabel.setTypedText(touchgfx::TypedText(T_SCORE));
-    scoreLabel.setXY(186, 105);
+    scoreLabel.setXY(180, 105);
+    scoreLabel.setWidth(60);
     scoreLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     add(scoreLabel);
 
     scoreValue.setTypedText(touchgfx::TypedText(T_WILDCARD));
-    scoreValue.setXY(186, 140);
+    scoreValue.setXY(180, 140);
+    scoreValue.setWidth(60);
+    scoreValue.setHeight(20);
     scoreValue.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xD5, 0x00)); // Neon Yellow
     Unicode::snprintf(scoreBuffer, 12, "000000");
     scoreValue.setWildcard(scoreBuffer);
@@ -126,12 +136,15 @@ void GameViewView::setupScreen()
 
     // GOAL
     goalLabel.setTypedText(touchgfx::TypedText(T_GOAL));
-    goalLabel.setXY(186, 230);
+    goalLabel.setXY(180, 230);
+    goalLabel.setWidth(60);
     goalLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     add(goalLabel);
 
     goalValue.setTypedText(touchgfx::TypedText(T_WILDCARD));
-    goalValue.setXY(186, 250);
+    goalValue.setXY(180, 250);
+    goalValue.setWidth(60);
+    goalValue.setHeight(20);
     goalValue.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0x00, 0x3C)); // Neon Red
     Unicode::snprintf(goalBuffer, 8, "010");
     goalValue.setWildcard(goalBuffer);
