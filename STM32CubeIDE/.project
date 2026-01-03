@@ -485,6 +485,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/TouchGFX/generated/images/src/image_block_z.cpp</locationURI>
 		</link>
 		<link>
+			<name>Application/User/generated/image_logo_tetris.cpp</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/TouchGFX/generated/images/src/image_logo_tetris.cpp</locationURI>
+		</link>
+		<link>
 			<name>Application/User/generated/image_panel_hold.cpp</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/TouchGFX/generated/images/src/image_panel_hold.cpp</locationURI>

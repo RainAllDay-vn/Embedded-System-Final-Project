@@ -136,6 +136,63 @@ void GameViewView::setupScreen()
     Unicode::snprintf(goalBuffer, 8, "010");
     goalValue.setWildcard(goalBuffer);
     add(goalValue);
+
+    // 7. Header (Top 40px)
+    logo.setBitmap(touchgfx::Bitmap(BITMAP_LOGO_TETRIS_ID));
+    logo.setXY((240 - logo.getWidth()) / 2, 8);
+    add(logo);
+
+    // 8. Footer (Bottom 40px: 280-320px)
+    touchgfx::colortype btnBorderColor = touchgfx::Color::getColorFromRGB(0x1B, 0x2A, 0x41);
+    touchgfx::colortype btnBgColor = touchgfx::Color::getColorFromRGB(0x0E, 0x17, 0x33);
+
+    // PAUSE Button
+    pauseBtnContainer.setPosition(25, 288, 80, 24);
+    
+    pauseBtnBackground.setPosition(0, 0, 80, 24);
+    pauseBtnBackground.setColor(btnBgColor);
+    pauseBtnContainer.add(pauseBtnBackground);
+    
+    // Border for Pause
+    pauseBtnBorder[0].setPosition(0, 0, 80, 1); // Top
+    pauseBtnBorder[1].setPosition(0, 23, 80, 1); // Bottom
+    pauseBtnBorder[2].setPosition(0, 0, 1, 24); // Left
+    pauseBtnBorder[3].setPosition(79, 0, 1, 24); // Right
+    for(int i=0; i<4; i++) {
+        pauseBtnBorder[i].setColor(btnBorderColor);
+        pauseBtnContainer.add(pauseBtnBorder[i]);
+    }
+
+    pauseButton.setTypedText(touchgfx::TypedText(T_PAUSE));
+    pauseButton.setXY(0, 4); // Centered vertically in 24px container
+    pauseButton.setWidth(80); // Full width for centering
+    pauseButton.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
+    pauseBtnContainer.add(pauseButton);
+    add(pauseBtnContainer);
+
+    // MENU Button
+    menuBtnContainer.setPosition(135, 288, 80, 24);
+    
+    menuBtnBackground.setPosition(0, 0, 80, 24);
+    menuBtnBackground.setColor(btnBgColor);
+    menuBtnContainer.add(menuBtnBackground);
+
+    // Border for Menu
+    menuBtnBorder[0].setPosition(0, 0, 80, 1); // Top
+    menuBtnBorder[1].setPosition(0, 23, 80, 1); // Bottom
+    menuBtnBorder[2].setPosition(0, 0, 1, 24); // Left
+    menuBtnBorder[3].setPosition(79, 0, 1, 24); // Right
+    for(int i=0; i<4; i++) {
+        menuBtnBorder[i].setColor(btnBorderColor);
+        menuBtnContainer.add(menuBtnBorder[i]);
+    }
+
+    menuButton.setTypedText(touchgfx::TypedText(T_MENU));
+    menuButton.setXY(0, 4);
+    menuButton.setWidth(80);
+    menuButton.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
+    menuBtnContainer.add(menuButton);
+    add(menuBtnContainer);
 }
 
 void GameViewView::tearDownScreen()

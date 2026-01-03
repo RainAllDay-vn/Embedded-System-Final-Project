@@ -54,6 +54,20 @@ protected:
     touchgfx::TextArea goalLabel;
     touchgfx::TextAreaWithOneWildcard goalValue;
     touchgfx::Unicode::UnicodeChar goalBuffer[8];
+
+    // Header & Footer
+    touchgfx::Image logo;
+    touchgfx::TextArea pauseButton;
+    touchgfx::TextArea menuButton;
+    
+    // Button backgrounds and borders
+    touchgfx::Container pauseBtnContainer;
+    touchgfx::Box pauseBtnBackground;
+    touchgfx::Box pauseBtnBorder[4];
+
+    touchgfx::Container menuBtnContainer;
+    touchgfx::Box menuBtnBackground;
+    touchgfx::Box menuBtnBorder[4];
 };
 
 #endif // GAMEVIEWVIEW_HPP

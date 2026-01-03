@@ -26,6 +26,12 @@
       <Text Id="WILDCARD" Alignment="Center" TypographyId="Small">
         <Translation Language="GB">&lt;v&gt;</Translation>
       </Text>
+      <Text Id="PAUSE" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">PAUSE</Translation>
+      </Text>
+      <Text Id="MENU" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">MENU</Translation>
+      </Text>
     </TextGroup>
   </Texts>
   <Typographies>
