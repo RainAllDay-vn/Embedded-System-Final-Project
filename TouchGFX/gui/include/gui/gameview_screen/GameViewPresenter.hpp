@@ -27,6 +27,21 @@ public:
 
     virtual ~GameViewPresenter() {}
 
+    // Proxy methods to Model
+    Tetris::TetrominoType getCurrentPieceType() { return model->getCurrentPieceType(); }
+    Tetris::TetrominoType getNextPieceType() { return model->getNextPieceType(); }
+    int getCurrentX() { return model->getCurrentX(); }
+    int getCurrentY() { return model->getCurrentY(); }
+    int getCurrentRotation() { return model->getCurrentRotation(); }
+    signed char getGridValue(int x, int y) { return model->getGridValue(x, y); }
+
+    void handleLeft() { model->moveLeft(); }
+    void handleRight() { model->moveRight(); }
+    void handleRotate() { model->rotate(); }
+    void handleDown() { model->step(); }
+
+    virtual void modelStateChanged();
+
 private:
     GameViewPresenter();
 

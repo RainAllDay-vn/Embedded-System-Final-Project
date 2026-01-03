@@ -14,6 +14,8 @@ public:
     {
         model = m;
     }
+
+    virtual void modelStateChanged() {}
 protected:
     Model* model;
 };

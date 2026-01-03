@@ -18,6 +18,10 @@ public:
     virtual ~GameViewView() {}
     virtual void setupScreen();
     virtual void tearDownScreen();
+
+    virtual void handleKeyEvent(uint8_t key);
+
+    void updateBoard();
 protected:
     static const int MATRIX_COLS = 10;
     static const int MATRIX_ROWS = 20;
@@ -68,6 +72,16 @@ protected:
     touchgfx::Container menuBtnContainer;
     touchgfx::Box menuBtnBackground;
     touchgfx::Box menuBtnBorder[4];
+
+    // Rendering Pool
+    touchgfx::Image fixedBlocks[MATRIX_ROWS][MATRIX_COLS];
+    touchgfx::Image fallingBlocks[4];
+    touchgfx::Image previewBlocks[4];
+    
+    // Mapping from TetrominoType to Bitmap ID
+    touchgfx::BitmapId blockBitmaps[Tetris::COUNT];
+
+    void drawPiece(Tetris::TetrominoType type, int x, int y, int rotation, touchgfx::Image* blockArray, int offsetX, int offsetY, bool isRelative = false);
 };
 
 #endif // GAMEVIEWVIEW_HPP

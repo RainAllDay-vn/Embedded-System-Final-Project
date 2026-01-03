@@ -193,9 +193,160 @@ void GameViewView::setupScreen()
     menuButton.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     menuBtnContainer.add(menuButton);
     add(menuBtnContainer);
+
+    // 9. Initialize Block Bitmaps mapping
+    blockBitmaps[Tetris::I] = BITMAP_BLOCK_I_ID;
+    blockBitmaps[Tetris::J] = BITMAP_BLOCK_J_ID;
+    blockBitmaps[Tetris::L] = BITMAP_BLOCK_L_ID;
+    blockBitmaps[Tetris::O] = BITMAP_BLOCK_O_ID;
+    blockBitmaps[Tetris::S] = BITMAP_BLOCK_S_ID;
+    blockBitmaps[Tetris::T] = BITMAP_BLOCK_T_ID;
+    blockBitmaps[Tetris::Z] = BITMAP_BLOCK_Z_ID;
+
+    // 10. Setup Block Pool
+    // Fixed blocks (the grid)
+    for (int y = 0; y < MATRIX_ROWS; y++)
+    {
+        for (int x = 0; x < MATRIX_COLS; x++)
+        {
+            fixedBlocks[y][x].setVisible(false);
+            fixedBlocks[y][x].setXY(2 + x * CELL_SIZE, 2 + y * CELL_SIZE);
+            matrixContainer.add(fixedBlocks[y][x]);
+        }
+    }
+
+    // Falling piece blocks
+    for (int i = 0; i < 4; i++)
+    {
+        fallingBlocks[i].setVisible(false);
+        matrixContainer.add(fallingBlocks[i]);
+    }
+
+    // Next piece blocks (Next panel is at 186, 40, size 48x48)
+    // We'll place them relative to the panel
+    for (int i = 0; i < 4; i++)
+    {
+        previewBlocks[i].setVisible(false);
+        add(previewBlocks[i]); // Adding to screen directly for simple positioning relative to panel
+    }
+
+    // Initial draw
+    updateBoard();
+}
+
+void GameViewView::updateBoard()
+{
+    // Synchronize landed blocks from Model
+    for (int y = 0; y < MATRIX_ROWS; y++)
+    {
+        for (int x = 0; x < MATRIX_COLS; x++)
+        {
+            signed char type = presenter->getGridValue(x, y);
+            if (type >= 0 && type < Tetris::COUNT)
+            {
+                fixedBlocks[y][x].setBitmap(touchgfx::Bitmap(blockBitmaps[type]));
+                fixedBlocks[y][x].setVisible(true);
+            }
+            else
+            {
+                fixedBlocks[y][x].setVisible(false);
+            }
+            fixedBlocks[y][x].invalidate();
+        }
+    }
+
+    // Draw Falling Piece
+    Tetris::TetrominoType currentType = presenter->getCurrentPieceType();
+    if (currentType != Tetris::NONE)
+    {
+        drawPiece(currentType, 
+                  presenter->getCurrentX(), 
+                  presenter->getCurrentY(), 
+                  presenter->getCurrentRotation(), 
+                  fallingBlocks, 2, 2); // Matrix starts at container +2,+2
+    }
+    else
+    {
+        for (int i = 0; i < 4; i++) fallingBlocks[i].setVisible(false);
+    }
+
+    // Draw Next Piece Preview
+    Tetris::TetrominoType nextType = presenter->getNextPieceType();
+    if (nextType != Tetris::NONE)
+    {
+        // Panel at (186, 40), size 48x48. Blocks 12x12.
+        // Center a 4x4 matrix (48x48) inside panel.
+        drawPiece(nextType, 0, 0, 0, previewBlocks, 186, 40, true);
+    }
+
+    invalidate();
+}
+
+void GameViewView::drawPiece(Tetris::TetrominoType type, int x, int y, int rotation, touchgfx::Image* blockArray, int offsetX, int offsetY, bool isRelative)
+{
+    int blockIdx = 0;
+    touchgfx::BitmapId bmp = blockBitmaps[type];
+
+    for (int row = 0; row < 4; row++)
+    {
+        for (int col = 0; col < 4; col++)
+        {
+            if (Tetris::SHAPES[type][rotation][row][col])
+            {
+                if (blockIdx < 4)
+                {
+                    blockArray[blockIdx].setBitmap(touchgfx::Bitmap(bmp));
+                    blockArray[blockIdx].setXY(offsetX + (x + col) * 12, offsetY + (y + row) * 12);
+                    blockArray[blockIdx].setVisible(true);
+                    blockArray[blockIdx].invalidate();
+                    blockIdx++;
+                }
+            }
+        }
+    }
+    
+    // Hide unused blocks if any (shouldn't happen with 4 blocks)
+    for (; blockIdx < 4; blockIdx++)
+    {
+        blockArray[blockIdx].setVisible(false);
+        blockArray[blockIdx].invalidate();
+    }
 }
 
 void GameViewView::tearDownScreen()
 {
     GameViewViewBase::tearDownScreen();
+}
+
+void GameViewView::handleKeyEvent(uint8_t key)
+{
+    // Typical key codes for Simulator:
+    // Left: 71, Right: 72, Up: 73, Down: 74
+    // A: 97, D: 100, W: 119, S: 115
+    
+    switch (key)
+    {
+    case 71: // Arrow Left
+    case 'a':
+    case 'A':
+        presenter->handleLeft();
+        break;
+    case 72: // Arrow Right
+    case 'd':
+    case 'D':
+        presenter->handleRight();
+        break;
+    case 73: // Arrow Up (Rotate)
+    case 'w':
+    case 'W':
+        presenter->handleRotate();
+        break;
+    case 74: // Arrow Down
+    case 's':
+    case 'S':
+        presenter->handleDown();
+        break;
+    }
+
+    updateBoard();
 }

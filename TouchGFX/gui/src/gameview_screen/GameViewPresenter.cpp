@@ -16,3 +16,8 @@ void GameViewPresenter::deactivate()
 {
 
 }
+
+void GameViewPresenter::modelStateChanged()
+{
+    view.updateBoard();
+}
