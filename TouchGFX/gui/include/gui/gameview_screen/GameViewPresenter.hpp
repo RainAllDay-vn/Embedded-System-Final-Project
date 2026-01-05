@@ -33,6 +33,7 @@ public:
     int getCurrentX() { return model->getCurrentX(); }
     int getCurrentY() { return model->getCurrentY(); }
     int getCurrentRotation() { return model->getCurrentRotation(); }
+    int getGhostY() { return model->getGhostY(); }
     signed char getGridValue(int x, int y) { return model->getGridValue(x, y); }
     int getScore() { return model->getScore(); }
     int getLevel() { return model->getLevel(); }

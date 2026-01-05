@@ -29,6 +29,7 @@ public:
     int getCurrentX() const { return currentX; }
     int getCurrentY() const { return currentY; }
     int getCurrentRotation() const { return currentRotation; }
+    int getGhostY() const;
     signed char getGridValue(int x, int y) const { return grid[y][x]; }
 
     bool getIsGameOver() const { return isGameOver; }
@@ -59,7 +60,7 @@ protected:
     void spawnPiece();
     void lockPiece();
     void checkLines();
-    bool isCollision(int x, int y, int rotation);
+    bool isCollision(int x, int y, int rotation) const;
     Tetris::TetrominoType getRandomPiece();
 };
 

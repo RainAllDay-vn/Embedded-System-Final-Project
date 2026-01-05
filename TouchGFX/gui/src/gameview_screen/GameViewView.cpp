@@ -237,11 +237,15 @@ void GameViewView::setupScreen()
         }
     }
 
-    // Falling piece blocks
+    // Falling piece and Ghost piece blocks
     for (int i = 0; i < 4; i++)
     {
         fallingBlocks[i].setVisible(false);
         matrixContainer.add(fallingBlocks[i]);
+
+        ghostBlocks[i].setVisible(false);
+        ghostBlocks[i].setAlpha(128); // Semi-transparent
+        matrixContainer.add(ghostBlocks[i]);
     }
 
     // Next piece blocks (Next panel is at 186, 40, size 48x48)
@@ -277,10 +281,26 @@ void GameViewView::updateBoard()
         }
     }
 
-    // Draw Falling Piece
+    // Draw Ghost Piece
     Tetris::TetrominoType currentType = presenter->getCurrentPieceType();
     if (currentType != Tetris::NONE)
     {
+        // Draw Ghost Piece first
+        int ghostY = presenter->getGhostY();
+        if (ghostY > presenter->getCurrentY())
+        {
+            drawPiece(currentType,
+                      presenter->getCurrentX(),
+                      ghostY,
+                      presenter->getCurrentRotation(),
+                      ghostBlocks, 2, 2);
+        }
+        else
+        {
+            for (int i = 0; i < 4; i++) ghostBlocks[i].setVisible(false);
+        }
+
+        // Draw Falling Piece
         drawPiece(currentType, 
                   presenter->getCurrentX(), 
                   presenter->getCurrentY(), 
@@ -289,7 +309,11 @@ void GameViewView::updateBoard()
     }
     else
     {
-        for (int i = 0; i < 4; i++) fallingBlocks[i].setVisible(false);
+        for (int i = 0; i < 4; i++)
+        {
+            fallingBlocks[i].setVisible(false);
+            ghostBlocks[i].setVisible(false);
+        }
     }
 
     // Draw Next Piece Preview

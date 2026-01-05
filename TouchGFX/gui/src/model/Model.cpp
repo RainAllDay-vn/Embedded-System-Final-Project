@@ -169,7 +169,7 @@ void Model::checkLines()
     }
 }
 
-bool Model::isCollision(int x, int y, int rotation)
+bool Model::isCollision(int x, int y, int rotation) const
 {
     for (int row = 0; row < 4; row++)
     {
@@ -205,4 +205,14 @@ void Model::spawnPiece()
 Tetris::TetrominoType Model::getRandomPiece()
 {
     return static_cast<Tetris::TetrominoType>(rand() % Tetris::COUNT);
+}
+
+int Model::getGhostY() const
+{
+    int ghostY = currentY;
+    while (!isCollision(currentX, ghostY + 1, currentRotation))
+    {
+        ghostY++;
+    }
+    return ghostY;
 }

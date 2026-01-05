@@ -78,6 +78,7 @@ protected:
     // Rendering Pool
     touchgfx::Image fixedBlocks[MATRIX_ROWS][MATRIX_COLS];
     touchgfx::Image fallingBlocks[4];
+    touchgfx::Image ghostBlocks[4];
     touchgfx::Image previewBlocks[4];
     
     // Mapping from TetrominoType to Bitmap ID
