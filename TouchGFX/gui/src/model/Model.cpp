@@ -5,18 +5,25 @@
 #include <ctime>
 
 Model::Model() : 
-    modelListener(0),
-    currentType(Tetris::NONE),
-    nextType(Tetris::NONE),
-    isGameOver(false),
-    isPaused(false),
-    score(0),
-    level(1),
-    linesCount(0),
-    goalLines(10),
-    tickCounter(0),
-    dropSpeed(60)
+    modelListener(0)
 {
+    srand(static_cast<unsigned int>(time(NULL)));
+    resetGame();
+}
+
+void Model::resetGame()
+{
+    isGameOver = false;
+    isPaused = false;
+    score = 0;
+    level = 1;
+    linesCount = 0;
+    goalLines = 10;
+    tickCounter = 0;
+    dropSpeed = 60;
+    currentType = Tetris::NONE;
+    nextType = Tetris::NONE;
+
     // Initialize grid
     for (int y = 0; y < 20; y++)
     {
@@ -26,9 +33,13 @@ Model::Model() :
         }
     }
 
-    srand(static_cast<unsigned int>(time(NULL)));
     nextType = getRandomPiece();
     spawnPiece();
+
+    if (modelListener != 0)
+    {
+        modelListener->modelStateChanged();
+    }
 }
 
 void Model::tick()

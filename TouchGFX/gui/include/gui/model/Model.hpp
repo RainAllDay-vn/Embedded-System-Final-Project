@@ -38,6 +38,7 @@ public:
     int getLines() const { return linesCount; }
     bool getIsPaused() const { return isPaused; }
     void togglePause();
+    void resetGame();
 
 protected:
     ModelListener* modelListener;

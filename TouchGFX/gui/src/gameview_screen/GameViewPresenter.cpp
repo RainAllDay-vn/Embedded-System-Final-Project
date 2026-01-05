@@ -9,7 +9,7 @@ GameViewPresenter::GameViewPresenter(GameViewView& v)
 
 void GameViewPresenter::activate()
 {
-
+    model->resetGame();
 }
 
 void GameViewPresenter::deactivate()
