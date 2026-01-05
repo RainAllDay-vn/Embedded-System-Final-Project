@@ -1,5 +1,6 @@
 #include <gui/gameview_screen/GameViewView.hpp>
 #include <touchgfx/Color.hpp>
+#include <gui/common/FrontendApplication.hpp>
 
 GameViewView::GameViewView()
 {
@@ -451,6 +452,14 @@ void GameViewView::handleClickEvent(const touchgfx::ClickEvent& event)
         {
             presenter->togglePause();
             updateBoard();
+        }
+
+        // Check if click is within Menu button container
+        // Container is at (135, 288) with size (80, 24)
+        if (event.getX() >= 135 && event.getX() <= 215 &&
+            event.getY() >= 288 && event.getY() <= 312)
+        {
+            static_cast<FrontendApplication*>(touchgfx::Application::getInstance())->gotoMainViewScreenNoTransition();
         }
     }
     

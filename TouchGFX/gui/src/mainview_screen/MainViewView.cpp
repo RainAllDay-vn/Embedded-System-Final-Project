@@ -1,0 +1,98 @@
+#include <gui/mainview_screen/MainViewView.hpp>
+#include <touchgfx/Color.hpp>
+#include <texts/TextKeysAndLanguages.hpp>
+#include <images/BitmapDatabase.hpp>
+#include <gui/common/FrontendApplication.hpp>
+#include <touchgfx/TypedText.hpp>
+
+MainViewView::MainViewView()
+{
+
+}
+
+void MainViewView::setupScreen()
+{
+    MainViewViewBase::setupScreen();
+
+    // 1. Background (Oxford Blue #0A1128)
+    background.setPosition(0, 0, 240, 320);
+    background.setColor(touchgfx::Color::getColorFromRGB(0x0A, 0x11, 0x28));
+    add(background);
+
+    // 2. Logo (Centered)
+    logo.setBitmap(touchgfx::Bitmap(BITMAP_LOGO_TETRIS_ID));
+    logo.setXY((240 - logo.getWidth()) / 2, 40);
+    add(logo);
+
+    // 3. Menu Buttons
+    // NEW GAME Button
+    setupButton(newGameBtn, newGameBtnBackground, newGameBtnBorder, newGameLabel, T_NEW_GAME, 40, 160);
+    
+    // HIGH SCORES Button
+    setupButton(highScoresBtn, highScoresBtnBackground, highScoresBtnBorder, highScoresLabel, T_HIGH_SCORES, 40, 220);
+
+    // 4. Decoration: Some random blocks in background
+    touchgfx::BitmapId blocks[] = {
+        BITMAP_BLOCK_I_ID, BITMAP_BLOCK_J_ID, BITMAP_BLOCK_L_ID,
+        BITMAP_BLOCK_O_ID, BITMAP_BLOCK_S_ID, BITMAP_BLOCK_T_ID, BITMAP_BLOCK_Z_ID
+    };
+
+    for (int i = 0; i < 10; i++)
+    {
+        backgroundBlocks[i].setBitmap(touchgfx::Bitmap(blocks[i % 7]));
+        int x = (i * 37) % 220;
+        int y = (i * 53) % 300;
+        backgroundBlocks[i].setXY(x, y);
+        backgroundBlocks[i].setAlpha(40); // Subtle
+        // Insert after background but before logo/buttons
+        insert(&background, backgroundBlocks[i]);
+    }
+}
+
+void MainViewView::setupButton(touchgfx::Container& btn, touchgfx::Box& bg, touchgfx::Box* borders, touchgfx::TextArea& label, TypedTextId textId, int x, int y)
+{
+    btn.setPosition(x, y, 160, 40);
+    
+    bg.setPosition(0, 0, 160, 40);
+    bg.setColor(touchgfx::Color::getColorFromRGB(0x0E, 0x17, 0x33));
+    btn.add(bg);
+
+    touchgfx::colortype borderColor = touchgfx::Color::getColorFromRGB(0x1B, 0x2A, 0x41);
+    borders[0].setPosition(0, 0, 160, 2); // Top
+    borders[1].setPosition(0, 38, 160, 2); // Bottom
+    borders[2].setPosition(0, 0, 2, 40); // Left
+    borders[3].setPosition(158, 0, 2, 40); // Right
+    for (int i = 0; i < 4; i++)
+    {
+        borders[i].setColor(borderColor);
+        btn.add(borders[i]);
+    }
+
+    label.setTypedText(touchgfx::TypedText(textId));
+    label.setXY(0, 10); // Center vertically (40-20)/2
+    label.setWidth(160); // Center horizontally
+    label.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
+    btn.add(label);
+
+    add(btn);
+}
+
+void MainViewView::handleClickEvent(const touchgfx::ClickEvent& event)
+{
+    if (event.getType() == touchgfx::ClickEvent::RELEASED)
+    {
+        // NEW GAME Button click check
+        if (event.getX() >= 40 && event.getX() <= 200 &&
+            event.getY() >= 160 && event.getY() <= 200)
+        {
+            static_cast<FrontendApplication*>(touchgfx::Application::getInstance())->gotoGameViewScreenNoTransition();
+        }
+    }
+
+    MainViewViewBase::handleClickEvent(event);
+}
+
+void MainViewView::tearDownScreen()
+{
+    MainViewViewBase::tearDownScreen();
+}

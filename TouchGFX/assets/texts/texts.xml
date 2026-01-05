@@ -41,6 +41,12 @@
       <Text Id="PAUSED" Alignment="Center" TypographyId="Default">
         <Translation Language="GB">PAUSED</Translation>
       </Text>
+      <Text Id="NEW_GAME" Alignment="Center" TypographyId="Default">
+        <Translation Language="GB">NEW GAME</Translation>
+      </Text>
+      <Text Id="HIGH_SCORES" Alignment="Center" TypographyId="Default">
+        <Translation Language="GB">HIGH SCORES</Translation>
+      </Text>
     </TextGroup>
   </Texts>
   <Typographies>

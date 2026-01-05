@@ -4,7 +4,36 @@
       {
         "Name": "GameView",
         "Components": [],
-        "Interactions": []
+        "Interactions": [
+          {
+            "InteractionName": "GoToMain",
+            "Trigger": {
+              "Type": "TriggerNone"
+            },
+            "Action": {
+              "Type": "ActionGotoScreen",
+              "ScreenTransitionType": "ScreenTransitionNone",
+              "ActionComponent": "MainView"
+            }
+          }
+        ]
+      },
+      {
+        "Name": "MainView",
+        "Components": [],
+        "Interactions": [
+          {
+            "InteractionName": "GoToGame",
+            "Trigger": {
+              "Type": "TriggerNone"
+            },
+            "Action": {
+              "Type": "ActionGotoScreen",
+              "ScreenTransitionType": "ScreenTransitionNone",
+              "ActionComponent": "GameView"
+            }
+          }
+        ]
       }
     ],
     "CustomContainerDefinitions": [],
@@ -14,7 +43,7 @@
       "Height": 320
     },
     "SelectedColorDepth": 16,
-    "StartupScreenName": "GameView",
+    "StartupScreenName": "MainView",
     "SelectedStartupLanguage": "GB",
     "TouchGfxPath": "../Middlewares/ST/touchgfx",
     "UIPath": ".",
