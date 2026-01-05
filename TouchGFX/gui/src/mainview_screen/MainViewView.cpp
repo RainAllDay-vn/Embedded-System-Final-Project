@@ -4,6 +4,7 @@
 #include <images/BitmapDatabase.hpp>
 #include <gui/common/FrontendApplication.hpp>
 #include <touchgfx/TypedText.hpp>
+#include <cstdlib>
 
 MainViewView::MainViewView()
 {
@@ -40,12 +41,35 @@ void MainViewView::setupScreen()
     for (int i = 0; i < 10; i++)
     {
         backgroundBlocks[i].setBitmap(touchgfx::Bitmap(blocks[i % 7]));
-        int x = (i * 37) % 220;
-        int y = (i * 53) % 300;
+        int x = rand() % 228;
+        int y = rand() % 400 - 100; // Some start off-screen, some on-screen
         backgroundBlocks[i].setXY(x, y);
         backgroundBlocks[i].setAlpha(40); // Subtle
+        backgroundBlockSpeeds[i] = 1 + (rand() % 3); // Speed 1, 2, or 3
         // Insert after background but before logo/buttons
         insert(&background, backgroundBlocks[i]);
+    }
+}
+
+void MainViewView::handleTickEvent()
+{
+    static const touchgfx::BitmapId blocks[] = {
+        BITMAP_BLOCK_I_ID, BITMAP_BLOCK_J_ID, BITMAP_BLOCK_L_ID,
+        BITMAP_BLOCK_O_ID, BITMAP_BLOCK_S_ID, BITMAP_BLOCK_T_ID, BITMAP_BLOCK_Z_ID
+    };
+
+    for (int i = 0; i < 10; i++)
+    {
+        backgroundBlocks[i].moveRelative(0, backgroundBlockSpeeds[i]);
+        if (backgroundBlocks[i].getY() > 320)
+        {
+            // Reset to a random negative Y to create a "disappear and spawn new" effect
+            backgroundBlocks[i].setY(-(20 + (rand() % 150))); 
+            backgroundBlocks[i].setX(rand() % 228);
+            backgroundBlocks[i].setBitmap(touchgfx::Bitmap(blocks[rand() % 7]));
+            backgroundBlockSpeeds[i] = 1 + (rand() % 3); // Re-randomize speed too
+        }
+        backgroundBlocks[i].invalidate();
     }
 }
 

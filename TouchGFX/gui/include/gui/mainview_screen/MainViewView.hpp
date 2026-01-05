@@ -18,6 +18,7 @@ public:
     virtual void tearDownScreen();
 
     virtual void handleClickEvent(const touchgfx::ClickEvent& event);
+    virtual void handleTickEvent();
 
 protected:
     touchgfx::Box background;
@@ -36,6 +37,7 @@ protected:
 
     // Decoration (optional but nice)
     touchgfx::Image backgroundBlocks[10];
+    int backgroundBlockSpeeds[10];
 
     void setupButton(touchgfx::Container& btn, touchgfx::Box& bg, touchgfx::Box* borders, touchgfx::TextArea& label, TypedTextId textId, int x, int y);
 };
