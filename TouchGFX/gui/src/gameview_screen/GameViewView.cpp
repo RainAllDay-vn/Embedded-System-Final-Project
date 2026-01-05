@@ -216,6 +216,15 @@ void GameViewView::setupScreen()
     gameOverLabel.setVisible(false);
     add(gameOverLabel);
 
+    // 9.5 Paused Label (Hidden initially)
+    pausedLabel.setTypedText(touchgfx::TypedText(T_PAUSED));
+    pausedLabel.setXY(58, 140); // Centered over matrixContainer
+    pausedLabel.setWidth(124);
+    pausedLabel.setHeight(40);
+    pausedLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
+    pausedLabel.setVisible(false);
+    add(pausedLabel);
+
     // 10. Initialize Block Bitmaps mapping
     blockBitmaps[Tetris::I] = BITMAP_BLOCK_I_ID;
     blockBitmaps[Tetris::J] = BITMAP_BLOCK_J_ID;
@@ -345,10 +354,19 @@ void GameViewView::updateBoard()
         gameOverLabel.setVisible(true);
         gameOverLabel.invalidate();
     }
+    // Handle Pause
+    if (presenter->getIsPaused())
+    {
+        pausedLabel.setVisible(true);
+        pauseButton.setTypedText(touchgfx::TypedText(T_RESUME));
+    }
     else
     {
-        gameOverLabel.setVisible(false);
+        pausedLabel.setVisible(false);
+        pauseButton.setTypedText(touchgfx::TypedText(T_PAUSE));
     }
+    pausedLabel.invalidate();
+    pauseButton.invalidate();
 
     invalidate();
 }
@@ -420,4 +438,21 @@ void GameViewView::handleKeyEvent(uint8_t key)
     }
 
     updateBoard();
+}
+
+void GameViewView::handleClickEvent(const touchgfx::ClickEvent& event)
+{
+    if (event.getType() == touchgfx::ClickEvent::RELEASED)
+    {
+        // Check if click is within Pause button container
+        // Container is at (25, 288) with size (80, 24)
+        if (event.getX() >= 25 && event.getX() <= 105 &&
+            event.getY() >= 288 && event.getY() <= 312)
+        {
+            presenter->togglePause();
+            updateBoard();
+        }
+    }
+    
+    GameViewViewBase::handleClickEvent(event);
 }

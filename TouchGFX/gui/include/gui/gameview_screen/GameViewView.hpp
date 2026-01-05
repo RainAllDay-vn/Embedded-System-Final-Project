@@ -20,6 +20,7 @@ public:
     virtual void tearDownScreen();
 
     virtual void handleKeyEvent(uint8_t key);
+    virtual void handleClickEvent(const touchgfx::ClickEvent& event);
 
     void updateBoard();
 protected:
@@ -60,6 +61,7 @@ protected:
     touchgfx::Unicode::UnicodeChar goalBuffer[8];
 
     touchgfx::TextArea gameOverLabel;
+    touchgfx::TextArea pausedLabel;
 
     // Header & Footer
     touchgfx::Image logo;

@@ -9,6 +9,7 @@ Model::Model() :
     currentType(Tetris::NONE),
     nextType(Tetris::NONE),
     isGameOver(false),
+    isPaused(false),
     score(0),
     level(1),
     linesCount(0),
@@ -32,7 +33,7 @@ Model::Model() :
 
 void Model::tick()
 {
-    if (isGameOver)
+    if (isGameOver || isPaused)
     {
         return;
     }
@@ -52,7 +53,7 @@ void Model::tick()
 
 void Model::moveLeft()
 {
-    if (isGameOver) return;
+    if (isGameOver || isPaused) return;
     if (!isCollision(currentX - 1, currentY, currentRotation))
     {
         currentX--;
@@ -61,7 +62,7 @@ void Model::moveLeft()
 
 void Model::moveRight()
 {
-    if (isGameOver) return;
+    if (isGameOver || isPaused) return;
     if (!isCollision(currentX + 1, currentY, currentRotation))
     {
         currentX++;
@@ -70,7 +71,7 @@ void Model::moveRight()
 
 void Model::rotate()
 {
-    if (isGameOver) return;
+    if (isGameOver || isPaused) return;
     int nextRotation = (currentRotation + 1) % 4;
     if (!isCollision(currentX, currentY, nextRotation))
     {
@@ -80,7 +81,7 @@ void Model::rotate()
 
 void Model::step()
 {
-    if (isGameOver) return;
+    if (isGameOver || isPaused) return;
     if (!isCollision(currentX, currentY + 1, currentRotation))
     {
         currentY++;
@@ -215,4 +216,10 @@ int Model::getGhostY() const
         ghostY++;
     }
     return ghostY;
+}
+
+void Model::togglePause()
+{
+    if (isGameOver) return;
+    isPaused = !isPaused;
 }

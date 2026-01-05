@@ -36,6 +36,8 @@ public:
     int getScore() const { return score; }
     int getLevel() const { return level; }
     int getLines() const { return linesCount; }
+    bool getIsPaused() const { return isPaused; }
+    void togglePause();
 
 protected:
     ModelListener* modelListener;
@@ -49,6 +51,7 @@ protected:
     Tetris::TetrominoType nextType;
 
     bool isGameOver;
+    bool isPaused;
     int score;
     int level;
     int linesCount;

@@ -35,6 +35,12 @@
       <Text Id="GAME_OVER" Alignment="Center" TypographyId="Default">
         <Translation Language="GB">GAME OVER</Translation>
       </Text>
+      <Text Id="RESUME" Alignment="Center" TypographyId="Small">
+        <Translation Language="GB">RESUME</Translation>
+      </Text>
+      <Text Id="PAUSED" Alignment="Center" TypographyId="Default">
+        <Translation Language="GB">PAUSED</Translation>
+      </Text>
     </TextGroup>
   </Texts>
   <Typographies>

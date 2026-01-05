@@ -39,6 +39,8 @@ public:
     int getLevel() { return model->getLevel(); }
     int getLines() { return model->getLines(); }
     bool getIsGameOver() { return model->getIsGameOver(); }
+    bool getIsPaused() { return model->getIsPaused(); }
+    void togglePause() { model->togglePause(); }
 
     void handleLeft() { model->moveLeft(); }
     void handleRight() { model->moveRight(); }
