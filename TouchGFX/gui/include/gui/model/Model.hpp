@@ -22,6 +22,7 @@ public:
     void moveRight();
     void rotate();
     void step(); // Move down one step (gravity)
+    void hardDrop();
 
     // Getters for UI
     Tetris::TetrominoType getCurrentPieceType() const { return currentType; }

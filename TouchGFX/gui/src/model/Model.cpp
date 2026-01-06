@@ -64,10 +64,11 @@ void Model::tick()
     {
         switch (key)
         {
-            case 'U': rotate(); break; // PB12
-            case 'R': moveRight(); break; // PB13
-            case 'D': step(); break; // PG2
-            case 'L': moveLeft(); break; // PG3
+            case 'U': rotate(); break;
+            case 'R': moveRight(); break;
+            case 'D': step(); break;
+            case 'L': moveLeft(); break;
+            case 'H': hardDrop(); break;
             default: break;
         }
     }
@@ -117,6 +118,13 @@ void Model::step()
     {
         lockPiece();
     }
+}
+
+void Model::hardDrop()
+{
+    if (isGameOver || isPaused) return;
+    currentY = getGhostY();
+    lockPiece();
 }
 
 void Model::lockPiece()

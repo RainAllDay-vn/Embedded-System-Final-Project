@@ -1031,33 +1031,69 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN 5 */
   
   uint8_t key;
+  // 0: Released, 1: Pressed, 2: Processed (Held)
+  uint8_t state_up = 0, state_right = 0, state_down = 0, state_left = 0;
+  uint32_t timer_down = 0; // Only down needs a timer for Hard Drop
 
   /* Infinite loop */
   for(;;)
   {
-    // Polling inputs (Active LOW)
-    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) // UP
-    {
-        key = 'U';
-        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-    }
-    else if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_RESET) // RIGHT
-    {
-        key = 'R';
-        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-    }
-    else if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_2) == GPIO_PIN_RESET) // DOWN
-    {
-        key = 'D';
-        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-    }
-    else if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_3) == GPIO_PIN_RESET) // LEFT
-    {
-        key = 'L';
-        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+    // --- UP (PB12) ---
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) { // Pressed
+        if (state_up == 0) state_up = 1; 
+    } else { // Released
+        if (state_up == 1) { // Was Pressed
+            key = 'U';
+            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+        }
+        state_up = 0;
     }
 
-    osDelay(100);
+    // --- RIGHT (PB13) ---
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_RESET) { // Pressed
+        if (state_right == 0) state_right = 1;
+    } else { // Released
+        if (state_right == 1) {
+            key = 'R';
+            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+        }
+        state_right = 0;
+    }
+
+    // --- LEFT (PG3) ---
+    if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_3) == GPIO_PIN_RESET) { // Pressed
+        if (state_left == 0) state_left = 1;
+    } else { // Released
+        if (state_left == 1) {
+            key = 'L';
+            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+        }
+        state_left = 0;
+    }
+
+    // --- DOWN (PG2) with HOLD logic ---
+    if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_2) == GPIO_PIN_RESET) { // Pressed
+        if (state_down == 0) {
+            state_down = 1;
+            timer_down = 0;
+        } else if (state_down == 1) {
+            timer_down += 20;
+            if (timer_down > 500) {
+                // Hold detected -> Hard Drop
+                key = 'H';
+                osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+                state_down = 2; // Mark as processed
+            }
+        }
+    } else { // Released
+        if (state_down == 1) { // Was Short Press
+            key = 'D';
+            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+        }
+        state_down = 0;
+    }
+
+    osDelay(20);
   }
   /* USER CODE END 5 */
 }
