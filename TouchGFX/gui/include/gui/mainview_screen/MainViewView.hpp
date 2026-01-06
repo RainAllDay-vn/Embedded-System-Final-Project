@@ -41,7 +41,7 @@ protected:
     int backgroundBlockSpeeds[10];
 
     touchgfx::TextAreaWithOneWildcard highLines1, highLines2, highLines3;
-    touchgfx::Unicode::UnicodeChar highLines1Buffer[10], highLines2Buffer[10], highLines3Buffer[10];
+    touchgfx::Unicode::UnicodeChar highLines1Buffer[20], highLines2Buffer[20], highLines3Buffer[20];
 
     void setupButton(touchgfx::Container& btn, touchgfx::Box& bg, touchgfx::Box* borders, touchgfx::TextArea& label, TypedTextId textId, int x, int y);
 };

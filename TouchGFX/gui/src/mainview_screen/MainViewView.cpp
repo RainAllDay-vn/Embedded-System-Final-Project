@@ -34,8 +34,8 @@ void MainViewView::setupScreen()
 
     //setup highscores
     int startX = 75;
-        int startY = 265;
-        int spacing = 18;
+    int startY = 265;
+    int spacing = 18;
 
     // Thiết lập 3 dòng điểm nhưng để ẨN ban đầu
     highLines1.setXY(startX, startY);
@@ -46,12 +46,14 @@ void MainViewView::setupScreen()
     add(highLines1);
 
     highLines2.setXY(startX, startY + spacing);
+    highLines2.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     highLines2.setTypedText(touchgfx::TypedText(T_WILDCARD));
     highLines2.setWildcard(highLines2Buffer);
     highLines2.setVisible(false);
     add(highLines2);
 
     highLines3.setXY(startX, startY + (spacing * 2));
+    highLines3.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     highLines3.setTypedText(touchgfx::TypedText(T_WILDCARD));
     highLines3.setWildcard(highLines3Buffer);
     highLines3.setVisible(false);
@@ -134,7 +136,7 @@ void MainViewView::handleClickEvent(const touchgfx::ClickEvent& event)
 {
     if (event.getType() == touchgfx::ClickEvent::RELEASED)
     {
-        // NEW GAME Button click check
+        // 1. NEW GAME Button click check
         if (event.getX() >= 40 && event.getX() <= 200 &&
             event.getY() >= 160 && event.getY() <= 200)
         {
@@ -144,17 +146,15 @@ void MainViewView::handleClickEvent(const touchgfx::ClickEvent& event)
         // 2. THÊM LOGIC CHO NÚT HIGH SCORES (x:40-200, y:220-260)
         if (event.getX() >= 40 && event.getX() <= 200 && event.getY() >= 220 && event.getY() <= 260)
         {
-           Unicode::snprintf(highLines1Buffer, 16, "1ST: %d", presenter->getHighScore(0));
-           Unicode::snprintf(highLines2Buffer, 16, "2ND: %d", presenter->getHighScore(1));
-           Unicode::snprintf(highLines3Buffer, 16, "3RD: %d", presenter->getHighScore(2));
+           Unicode::snprintf(highLines1Buffer, 20, "1ST: %d", presenter->getHighScore(0));
+           Unicode::snprintf(highLines2Buffer, 20, "2ND: %d", presenter->getHighScore(1));
+           Unicode::snprintf(highLines3Buffer, 20, "3RD: %d", presenter->getHighScore(2));
 
            highLines1.setVisible(true);
            highLines2.setVisible(true);
            highLines3.setVisible(true);
 
-           highLines1.invalidate();
-           highLines2.invalidate();
-           highLines3.invalidate();
+           invalidate();
          }
     }
 
