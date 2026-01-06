@@ -184,6 +184,7 @@ void GameViewView::setupScreen()
     }
 
     pauseButton.setTypedText(touchgfx::TypedText(T_PAUSE));
+    pauseButton.setWildcard(pauseButtonBuffer);
     pauseButton.setXY(0, 4); // Centered vertically in 24px container
     pauseButton.setWidth(80); // Full width for centering
     pauseButton.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
@@ -394,22 +395,29 @@ void GameViewView::updateBoard()
     goalValue.invalidate();
 
     // Handle Game Over
+    // Handle Game Over
     if (presenter->getIsGameOver())
     {
         gameOverLabel.setVisible(true);
-        gameOverLabel.invalidate();
-    }
-    // Handle Pause
-    if (presenter->getIsPaused())
-    {
-        pausedLabel.setVisible(true);
-        pauseButton.setTypedText(touchgfx::TypedText(T_RESUME));
+        Unicode::snprintf(pauseButtonBuffer, 10, "RESET");
+        pauseButton.setTypedText(touchgfx::TypedText(T_WILDCARD));
     }
     else
     {
-        pausedLabel.setVisible(false);
-        pauseButton.setTypedText(touchgfx::TypedText(T_PAUSE));
+        gameOverLabel.setVisible(false);
+        // Handle Pause logic only if not Game Over
+        if (presenter->getIsPaused())
+        {
+            pausedLabel.setVisible(true);
+            pauseButton.setTypedText(touchgfx::TypedText(T_RESUME));
+        }
+        else
+        {
+            pausedLabel.setVisible(false);
+            pauseButton.setTypedText(touchgfx::TypedText(T_PAUSE));
+        }
     }
+    gameOverLabel.invalidate();
     pausedLabel.invalidate();
     pauseButton.invalidate();
 
@@ -501,7 +509,14 @@ void GameViewView::handleClickEvent(const touchgfx::ClickEvent& event)
         if (event.getX() >= 25 && event.getX() <= 105 &&
             event.getY() >= 288 && event.getY() <= 312)
         {
-            presenter->togglePause();
+            if (presenter->getIsGameOver())
+            {
+                 presenter->resetGame();
+            }
+            else
+            {
+                 presenter->togglePause();
+            }
             updateBoard();
         }
 

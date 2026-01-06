@@ -67,7 +67,8 @@ protected:
 
     // Header & Footer
     touchgfx::Image logo;
-    touchgfx::TextArea pauseButton;
+    touchgfx::TextAreaWithOneWildcard pauseButton;
+    touchgfx::Unicode::UnicodeChar pauseButtonBuffer[10];
     touchgfx::TextArea menuButton;
     
     // Button backgrounds and borders

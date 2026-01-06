@@ -50,6 +50,7 @@ public:
     bool getIsGameOver() { return model->getIsGameOver(); }
     bool getIsPaused() { return model->getIsPaused(); }
     void togglePause() { model->togglePause(); }
+    void resetGame() { model->resetGame(); }
     
     // High Score scoreboard (mix of high scores + current score)
     void getScoreboard(ScoreInfo* buffer);
