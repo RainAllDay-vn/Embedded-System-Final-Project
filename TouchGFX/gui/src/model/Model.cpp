@@ -1,8 +1,11 @@
 #include <gui/model/Model.hpp>
 #include <gui/model/ModelListener.hpp>
+#include "cmsis_os.h"
 
 #include <cstdlib>
 #include <ctime>
+
+extern osMessageQueueId_t inputQueueHandle;
 
 Model::Model() : 
     modelListener(0)
@@ -54,6 +57,19 @@ void Model::tick()
     {
         tickCounter = 0;
         step();
+    }
+    
+    uint8_t key = 0;
+    while (osMessageQueueGet(inputQueueHandle, &key, NULL, 0) == osOK)
+    {
+        switch (key)
+        {
+            case 'U': rotate(); break; // PB12
+            case 'R': moveRight(); break; // PB13
+            case 'D': step(); break; // PG2
+            case 'L': moveLeft(); break; // PG3
+            default: break;
+        }
     }
 
     if (modelListener != 0)

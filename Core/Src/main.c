@@ -97,6 +97,7 @@ volatile uint8_t pb12_sw = 0;
 volatile uint8_t pb13_sw = 0;
 volatile uint8_t pg2_sw = 0;
 volatile uint8_t pg3_sw = 0;
+osMessageQueueId_t inputQueueHandle;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -211,6 +212,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+  inputQueueHandle = osMessageQueueNew(2, sizeof(uint8_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -1027,17 +1029,33 @@ void LCD_Delay(uint32_t Delay)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  char msg[32];
+  
+  uint8_t key;
+
   /* Infinite loop */
   for(;;)
   {
-    pb12_sw = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12);
-    pb13_sw = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13);
-    pg2_sw = HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_2);
-    pg3_sw = HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_3);
-
-    int len = sprintf(msg, "State: %d %d %d %d\r\n", pb12_sw, pb13_sw, pg2_sw, pg3_sw);
-    HAL_UART_Transmit(&huart1, (uint8_t*)msg, len, 100);
+    // Polling inputs (Active LOW)
+    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) // UP
+    {
+        key = 'U';
+        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+    }
+    else if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_RESET) // RIGHT
+    {
+        key = 'R';
+        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+    }
+    else if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_2) == GPIO_PIN_RESET) // DOWN
+    {
+        key = 'D';
+        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+    }
+    else if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_3) == GPIO_PIN_RESET) // LEFT
+    {
+        key = 'L';
+        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+    }
 
     osDelay(100);
   }
