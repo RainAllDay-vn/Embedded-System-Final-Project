@@ -33,28 +33,29 @@ void MainViewView::setupScreen()
     setupButton(highScoresBtn, highScoresBtnBackground, highScoresBtnBorder, highScoresLabel, T_HIGH_SCORES, 40, 220);
 
     //setup highscores
-    int startX = 75;
-        int startY = 265;
-        int spacing = 18;
+    int startX = 80;  // Căn lề trái
+    int startY = 265; // Vị trí bắt đầu bên dưới nút High Scores
+    int spacing = 18; // Khoảng cách giữa các dòng
 
-    // Thiết lập 3 dòng điểm nhưng để ẨN ban đầu
     highLines1.setXY(startX, startY);
-    highLines1.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xD5, 0x00));
+    highLines1.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xD5, 0x00)); // Màu vàng neon
     highLines1.setTypedText(touchgfx::TypedText(T_WILDCARD));
     highLines1.setWildcard(highLines1Buffer);
-    highLines1.setVisible(false);
+    Unicode::snprintf(highLines1Buffer, 10, "1ST: %d", presenter->getHighScore(0));
     add(highLines1);
 
     highLines2.setXY(startX, startY + spacing);
+    highLines2.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF)); // Màu trắng
     highLines2.setTypedText(touchgfx::TypedText(T_WILDCARD));
     highLines2.setWildcard(highLines2Buffer);
-    highLines2.setVisible(false);
+    Unicode::snprintf(highLines2Buffer, 10, "2ND: %d", presenter->getHighScore(1));
     add(highLines2);
 
     highLines3.setXY(startX, startY + (spacing * 2));
+    highLines3.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     highLines3.setTypedText(touchgfx::TypedText(T_WILDCARD));
     highLines3.setWildcard(highLines3Buffer);
-    highLines3.setVisible(false);
+    Unicode::snprintf(highLines3Buffer, 10, "3RD: %d", presenter->getHighScore(2));
     add(highLines3);
 
     highLines1.invalidate();
@@ -140,22 +141,6 @@ void MainViewView::handleClickEvent(const touchgfx::ClickEvent& event)
         {
             static_cast<FrontendApplication*>(touchgfx::Application::getInstance())->gotoGameViewScreenNoTransition();
         }
-
-        // 2. THÊM LOGIC CHO NÚT HIGH SCORES (x:40-200, y:220-260)
-        if (event.getX() >= 40 && event.getX() <= 200 && event.getY() >= 220 && event.getY() <= 260)
-        {
-           Unicode::snprintf(highLines1Buffer, 16, "1ST: %d", presenter->getHighScore(0));
-           Unicode::snprintf(highLines2Buffer, 16, "2ND: %d", presenter->getHighScore(1));
-           Unicode::snprintf(highLines3Buffer, 16, "3RD: %d", presenter->getHighScore(2));
-
-           highLines1.setVisible(true);
-           highLines2.setVisible(true);
-           highLines3.setVisible(true);
-
-           highLines1.invalidate();
-           highLines2.invalidate();
-           highLines3.invalidate();
-         }
     }
 
     MainViewViewBase::handleClickEvent(event);
