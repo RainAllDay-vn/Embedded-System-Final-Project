@@ -27,6 +27,8 @@ public:
 
     virtual ~MainViewPresenter() {}
 
+    int getHighScore(int index) { return model->getHighScore(index); }
+
 private:
     MainViewPresenter();
 

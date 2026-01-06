@@ -8,6 +8,7 @@
 #include <touchgfx/widgets/TextArea.hpp>
 #include <texts/TextKeysAndLanguages.hpp>
 #include <touchgfx/TypedText.hpp>
+#include <touchgfx/widgets/TextAreaWithWildcard.hpp>
 
 class MainViewView : public MainViewViewBase
 {
@@ -38,6 +39,9 @@ protected:
     // Decoration (optional but nice)
     touchgfx::Image backgroundBlocks[10];
     int backgroundBlockSpeeds[10];
+
+    touchgfx::TextAreaWithOneWildcard highLines1, highLines2, highLines3;
+    touchgfx::Unicode::UnicodeChar highLines1Buffer[10], highLines2Buffer[10], highLines3Buffer[10];
 
     void setupButton(touchgfx::Container& btn, touchgfx::Box& bg, touchgfx::Box* borders, touchgfx::TextArea& label, TypedTextId textId, int x, int y);
 };

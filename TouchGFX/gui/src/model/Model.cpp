@@ -24,6 +24,11 @@ void Model::resetGame()
     currentType = Tetris::NONE;
     nextType = Tetris::NONE;
 
+    //setup highscores
+    for (int i = 0; i < 3; i++) {
+        highScores[i] = 0;
+    }
+
     // Initialize grid
     for (int y = 0; y < 20; y++)
     {
@@ -211,6 +216,7 @@ void Model::spawnPiece()
     if (isCollision(currentX, currentY, currentRotation))
     {
         isGameOver = true;
+        updateHighScores();
     }
 }
 
@@ -233,4 +239,34 @@ void Model::togglePause()
 {
     if (isGameOver) return;
     isPaused = !isPaused;
+}
+
+void Model::hardDrop()
+{
+    if (isGameOver || isPaused) return;
+
+    // Đưa miếng gạch xuống vị trí thấp nhất (vị trí ghost)
+    currentY = getGhostY();
+
+    // Khóa miếng gạch ngay lập tức tại vị trí đó
+    lockPiece();
+
+    if (modelListener != 0)
+    {
+        modelListener->modelStateChanged();
+    }
+}
+
+void Model::updateHighScores()
+{
+    for (int i = 0; i < 3; i++)
+    {
+        if (score > highScores[i])
+        {
+            // Đẩy các điểm thấp hơn xuống
+            for (int j = 2; j > i; j--) highScores[j] = highScores[j-1];
+            highScores[i] = score;
+            break;
+        }
+    }
 }

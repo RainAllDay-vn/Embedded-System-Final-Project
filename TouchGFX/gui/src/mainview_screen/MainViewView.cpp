@@ -32,6 +32,36 @@ void MainViewView::setupScreen()
     // HIGH SCORES Button
     setupButton(highScoresBtn, highScoresBtnBackground, highScoresBtnBorder, highScoresLabel, T_HIGH_SCORES, 40, 220);
 
+    //setup highscores
+    int startX = 80;  // Căn lề trái
+    int startY = 265; // Vị trí bắt đầu bên dưới nút High Scores
+    int spacing = 18; // Khoảng cách giữa các dòng
+
+    highLines1.setXY(startX, startY);
+    highLines1.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xD5, 0x00)); // Màu vàng neon
+    highLines1.setTypedText(touchgfx::TypedText(T_WILDCARD));
+    highLines1.setWildcard(highLines1Buffer);
+    Unicode::snprintf(highLines1Buffer, 10, "1ST: %d", presenter->getHighScore(0));
+    add(highLines1);
+
+    highLines2.setXY(startX, startY + spacing);
+    highLines2.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF)); // Màu trắng
+    highLines2.setTypedText(touchgfx::TypedText(T_WILDCARD));
+    highLines2.setWildcard(highLines2Buffer);
+    Unicode::snprintf(highLines2Buffer, 10, "2ND: %d", presenter->getHighScore(1));
+    add(highLines2);
+
+    highLines3.setXY(startX, startY + (spacing * 2));
+    highLines3.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
+    highLines3.setTypedText(touchgfx::TypedText(T_WILDCARD));
+    highLines3.setWildcard(highLines3Buffer);
+    Unicode::snprintf(highLines3Buffer, 10, "3RD: %d", presenter->getHighScore(2));
+    add(highLines3);
+
+    highLines1.invalidate();
+    highLines2.invalidate();
+    highLines3.invalidate();
+
     // 4. Decoration: Some random blocks in background
     touchgfx::BitmapId blocks[] = {
         BITMAP_BLOCK_I_ID, BITMAP_BLOCK_J_ID, BITMAP_BLOCK_L_ID,
