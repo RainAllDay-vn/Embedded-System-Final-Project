@@ -23,10 +23,12 @@ public:
     void rotate();
     void step(); // Move down one step (gravity)
     void hardDrop();
+    void holdPiece();
 
     // Getters for UI
     Tetris::TetrominoType getCurrentPieceType() const { return currentType; }
     Tetris::TetrominoType getNextPieceType() const { return nextType; }
+    Tetris::TetrominoType getHeldPieceType() const { return heldType; }
     int getCurrentX() const { return currentX; }
     int getCurrentY() const { return currentY; }
     int getCurrentRotation() const { return currentRotation; }
@@ -51,6 +53,8 @@ protected:
     int currentRotation;
 
     Tetris::TetrominoType nextType;
+    Tetris::TetrominoType heldType;
+    bool hasHeld;
 
     bool isGameOver;
     bool isPaused;

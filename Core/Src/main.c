@@ -1034,15 +1034,27 @@ void StartDefaultTask(void *argument)
   // 0: Released, 1: Pressed, 2: Processed (Held)
   uint8_t state_up = 0, state_right = 0, state_down = 0, state_left = 0;
   uint32_t timer_down = 0; // Only down needs a timer for Hard Drop
+  uint32_t timer_up = 0;   // Up needs timer for Hold Piece
 
   /* Infinite loop */
   for(;;)
   {
-    // --- UP (PB12) ---
+    // --- UP (PB12) with HOLD (Swap) logic ---
     if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) { // Pressed
-        if (state_up == 0) state_up = 1; 
+        if (state_up == 0) {
+            state_up = 1;
+            timer_up = 0;
+        } else if (state_up == 1) {
+            timer_up += 20;
+            if (timer_up > 500) {
+                // Hold detected -> Swap/Hold Piece
+                key = 'S';
+                osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+                state_up = 2; // Mark as processed
+            }
+        }
     } else { // Released
-        if (state_up == 1) { // Was Pressed
+        if (state_up == 1) { // Was Short Press
             key = 'U';
             osMessageQueuePut(inputQueueHandle, &key, 0, 0);
         }

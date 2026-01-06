@@ -1,11 +1,15 @@
 #include <gui/model/Model.hpp>
 #include <gui/model/ModelListener.hpp>
+#ifndef SIMULATOR
 #include "cmsis_os.h"
+#endif
 
 #include <cstdlib>
 #include <ctime>
 
+#ifndef SIMULATOR
 extern osMessageQueueId_t inputQueueHandle;
+#endif
 
 Model::Model() : 
     modelListener(0)
@@ -26,6 +30,10 @@ void Model::resetGame()
     dropSpeed = 60;
     currentType = Tetris::NONE;
     nextType = Tetris::NONE;
+    heldType = Tetris::NONE;
+    hasHeld = false;
+
+    // Initialize grid
 
     // Initialize grid
     for (int y = 0; y < 20; y++)
@@ -59,6 +67,7 @@ void Model::tick()
         step();
     }
     
+#ifndef SIMULATOR
     uint8_t key = 0;
     while (osMessageQueueGet(inputQueueHandle, &key, NULL, 0) == osOK)
     {
@@ -69,9 +78,11 @@ void Model::tick()
             case 'D': step(); break;
             case 'L': moveLeft(); break;
             case 'H': hardDrop(); break;
+            case 'S': holdPiece(); break;
             default: break;
         }
     }
+#endif
 
     if (modelListener != 0)
     {
@@ -125,6 +136,34 @@ void Model::hardDrop()
     if (isGameOver || isPaused) return;
     currentY = getGhostY();
     lockPiece();
+}
+
+void Model::holdPiece()
+{
+    if (isGameOver || isPaused || hasHeld) return;
+
+    if (heldType == Tetris::NONE)
+    {
+        heldType = currentType;
+        spawnPiece();
+    }
+    else
+    {
+        Tetris::TetrominoType temp = currentType;
+        currentType = heldType;
+        heldType = temp;
+        
+        currentX = 3;
+        currentY = 0;
+        currentRotation = 0;
+    }
+    
+    hasHeld = true;
+    
+    if (modelListener != 0)
+    {
+        modelListener->modelStateChanged();
+    }
 }
 
 void Model::lockPiece()
@@ -226,6 +265,7 @@ bool Model::isCollision(int x, int y, int rotation) const
 
 void Model::spawnPiece()
 {
+    hasHeld = false;
     currentType = nextType;
     nextType = getRandomPiece();
     currentX = 3;

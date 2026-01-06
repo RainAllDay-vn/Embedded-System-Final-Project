@@ -82,6 +82,7 @@ protected:
     touchgfx::Image fallingBlocks[4];
     touchgfx::Image ghostBlocks[4];
     touchgfx::Image previewBlocks[4];
+    touchgfx::Image holdBlocks[4];
     
     // Mapping from TetrominoType to Bitmap ID
     touchgfx::BitmapId blockBitmaps[Tetris::COUNT];

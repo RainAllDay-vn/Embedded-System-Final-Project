@@ -30,6 +30,7 @@ public:
     // Proxy methods to Model
     Tetris::TetrominoType getCurrentPieceType() { return model->getCurrentPieceType(); }
     Tetris::TetrominoType getNextPieceType() { return model->getNextPieceType(); }
+    Tetris::TetrominoType getHeldPieceType() { return model->getHeldPieceType(); }
     int getCurrentX() { return model->getCurrentX(); }
     int getCurrentY() { return model->getCurrentY(); }
     int getCurrentRotation() { return model->getCurrentRotation(); }
@@ -46,6 +47,8 @@ public:
     void handleRight() { model->moveRight(); }
     void handleRotate() { model->rotate(); }
     void handleDown() { model->step(); }
+    void handleHardDrop() { model->hardDrop(); }
+    void handleHoldPiece() { model->holdPiece(); }
 
     virtual void modelStateChanged();
 

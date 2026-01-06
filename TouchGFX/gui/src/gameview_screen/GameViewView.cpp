@@ -266,6 +266,15 @@ void GameViewView::setupScreen()
         add(previewBlocks[i]); // Adding to screen directly for simple positioning relative to panel
     }
 
+    // Held piece blocks (Hold panel at 6, 40)
+    for (int i = 0; i < 4; i++)
+    {
+        holdBlocks[i].setVisible(false);
+        add(holdBlocks[i]); 
+    }
+
+    // Initial draw
+
     // Initial draw
     updateBoard();
 }
@@ -332,7 +341,19 @@ void GameViewView::updateBoard()
     {
         // Panel at (186, 40), size 48x48. Blocks 12x12.
         // Center a 4x4 matrix (48x48) inside panel.
+        // Center a 4x4 matrix (48x48) inside panel.
         drawPiece(nextType, 0, 0, 0, previewBlocks, 186, 40, true);
+    }
+
+    // Draw Held Piece
+    Tetris::TetrominoType heldType = presenter->getHeldPieceType();
+    if (heldType != Tetris::NONE)
+    {
+        drawPiece(heldType, 0, 0, 0, holdBlocks, 6, 40, true);
+    }
+    else
+    {
+        for (int i = 0; i < 4; i++) holdBlocks[i].setVisible(false);
     }
 
     // Update Sidebars (Score, Level, Lines, Goal)
@@ -435,6 +456,13 @@ void GameViewView::handleKeyEvent(uint8_t key)
     case 's':
     case 'S':
         presenter->handleDown();
+        break;
+    case 32: // Space -> Hard Drop
+        presenter->handleHardDrop();
+        break;
+    case 'c': // C -> Hold Piece
+    case 'C':
+        presenter->handleHoldPiece();
         break;
     }
 
