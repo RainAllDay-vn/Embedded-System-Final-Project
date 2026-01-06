@@ -42,8 +42,13 @@ public:
     bool getIsPaused() const { return isPaused; }
     void togglePause();
     void resetGame();
+    
+    // High Score API
+    void getHighScores(int* buffer) const;
+    void addScore(int newScore);
 
 protected:
+    int highScores[3];
     ModelListener* modelListener;
 
     signed char grid[20][10];

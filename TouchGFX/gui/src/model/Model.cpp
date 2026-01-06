@@ -15,6 +15,12 @@ Model::Model() :
     modelListener(0)
 {
     srand(static_cast<unsigned int>(time(NULL)));
+    
+    // Hardcoded initial high scores
+    highScores[0] = 5000;
+    highScores[1] = 4000;
+    highScores[2] = 3000;
+
     resetGame();
 }
 
@@ -50,6 +56,31 @@ void Model::resetGame()
     if (modelListener != 0)
     {
         modelListener->modelStateChanged();
+    }
+}
+
+void Model::getHighScores(int* buffer) const
+{
+    for(int i=0; i<3; ++i)
+    {
+        buffer[i] = highScores[i];
+    }
+}
+
+void Model::addScore(int newScore)
+{
+    // Simple insertion sort
+    // Check if newScore is higher than the lowest high score
+    if (newScore > highScores[2])
+    {
+        // Find position
+        int i;
+        for (i = 2; i > 0; i--)
+        {
+            if (newScore <= highScores[i-1]) break;
+            highScores[i] = highScores[i-1];
+        }
+        highScores[i] = newScore;
     }
 }
 
@@ -275,6 +306,7 @@ void Model::spawnPiece()
     if (isCollision(currentX, currentY, currentRotation))
     {
         isGameOver = true;
+        addScore(score);
     }
 }
 

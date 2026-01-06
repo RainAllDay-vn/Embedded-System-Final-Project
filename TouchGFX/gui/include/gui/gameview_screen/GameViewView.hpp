@@ -53,8 +53,10 @@ protected:
 
     touchgfx::Image scorePanel;
     touchgfx::TextArea scoreLabel;
-    touchgfx::TextAreaWithOneWildcard scoreValue;
-    touchgfx::Unicode::UnicodeChar scoreBuffer[12];
+    
+    // 4 Score Lines (1 Current + 3 HighScores)
+    touchgfx::TextAreaWithOneWildcard scoreLines[4];
+    touchgfx::Unicode::UnicodeChar scoreBuffers[4][12];
 
     touchgfx::TextArea goalLabel;
     touchgfx::TextAreaWithOneWildcard goalValue;

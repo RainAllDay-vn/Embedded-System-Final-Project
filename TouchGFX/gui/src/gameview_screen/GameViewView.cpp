@@ -126,14 +126,20 @@ void GameViewView::setupScreen()
     scoreLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
     add(scoreLabel);
 
-    scoreValue.setTypedText(touchgfx::TypedText(T_WILDCARD));
-    scoreValue.setXY(180, 140);
-    scoreValue.setWidth(60);
-    scoreValue.setHeight(20);
-    scoreValue.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xD5, 0x00)); // Neon Yellow
-    Unicode::snprintf(scoreBuffer, 12, "000000");
-    scoreValue.setWildcard(scoreBuffer);
-    add(scoreValue);
+    // Score Lines (Start Y = 126, Spacing = 16)
+    for(int i=0; i<4; i++)
+    {
+        scoreLines[i].setTypedText(touchgfx::TypedText(T_WILDCARD));
+        scoreLines[i].setXY(180, 126 + (i * 16));
+        scoreLines[i].setWidth(60);
+        scoreLines[i].setHeight(16); // Compact height
+        // Color will be set in updateBoard based on ranking
+        scoreLines[i].setColor(touchgfx::Color::getColorFromRGB(0x80, 0x80, 0x80)); // Default Gray
+        
+        Unicode::snprintf(scoreBuffers[i], 12, "000000");
+        scoreLines[i].setWildcard(scoreBuffers[i]);
+        add(scoreLines[i]);
+    }
 
     // GOAL
     goalLabel.setTypedText(touchgfx::TypedText(T_GOAL));
@@ -357,8 +363,25 @@ void GameViewView::updateBoard()
     }
 
     // Update Sidebars (Score, Level, Lines, Goal)
-    Unicode::snprintf(scoreBuffer, 12, "%06d", presenter->getScore());
-    scoreValue.invalidate();
+    ScoreInfo scoreboard[4];
+    presenter->getScoreboard(scoreboard);
+
+    for(int i=0; i<4; i++)
+    {
+        Unicode::snprintf(scoreBuffers[i], 12, "%06d", scoreboard[i].score);
+        
+        if (scoreboard[i].isCurrent)
+        {
+            // Yellow for user
+             scoreLines[i].setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xD5, 0x00));
+        }
+        else
+        {
+            // Gray for others
+             scoreLines[i].setColor(touchgfx::Color::getColorFromRGB(0x80, 0x80, 0x80));
+        }
+        scoreLines[i].invalidate();
+    }
 
     Unicode::snprintf(levelBuffer, 8, "%02d", presenter->getLevel());
     levelValue.invalidate();

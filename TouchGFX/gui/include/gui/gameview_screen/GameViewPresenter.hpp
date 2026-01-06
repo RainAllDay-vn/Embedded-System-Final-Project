@@ -8,6 +8,14 @@ using namespace touchgfx;
 
 class GameViewView;
 
+class GameViewView;
+
+struct ScoreInfo
+{
+    int score;
+    bool isCurrent;
+};
+
 class GameViewPresenter : public touchgfx::Presenter, public ModelListener
 {
 public:
@@ -42,6 +50,9 @@ public:
     bool getIsGameOver() { return model->getIsGameOver(); }
     bool getIsPaused() { return model->getIsPaused(); }
     void togglePause() { model->togglePause(); }
+    
+    // High Score scoreboard (mix of high scores + current score)
+    void getScoreboard(ScoreInfo* buffer);
 
     void handleLeft() { model->moveLeft(); }
     void handleRight() { model->moveRight(); }
