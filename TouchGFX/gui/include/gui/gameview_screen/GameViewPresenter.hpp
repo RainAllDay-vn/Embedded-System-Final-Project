@@ -46,7 +46,6 @@ public:
     void handleRight() { model->moveRight(); }
     void handleRotate() { model->rotate(); }
     void handleDown() { model->step(); }
-    void handleHardDrop() { model->hardDrop(); }
 
     virtual void modelStateChanged();
 

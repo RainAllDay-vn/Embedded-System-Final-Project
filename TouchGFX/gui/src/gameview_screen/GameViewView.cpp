@@ -1,6 +1,5 @@
 #include <gui/gameview_screen/GameViewView.hpp>
 #include <touchgfx/Color.hpp>
-#include <touchgfx/Utils.hpp>
 #include <gui/common/FrontendApplication.hpp>
 
 GameViewView::GameViewView()
@@ -331,25 +330,9 @@ void GameViewView::updateBoard()
     Tetris::TetrominoType nextType = presenter->getNextPieceType();
     if (nextType != Tetris::NONE)
     {
-        // Tọa độ gốc của Panel Next là (186, 40), kích thước 48x48.
-        // Mỗi ô gạch 12x12.
-        int offsetX = 186;
-        int offsetY = 40;
-
-        // Điều chỉnh trung tâm tùy theo loại gạch
-        switch (nextType)
-        {
-            case Tetris::I: offsetY -= 6; break; // Miếng gạch dài cần kéo lên một chút
-            case Tetris::O: offsetX += 6; break; // Miếng vuông 2x2 cần đẩy sang phải
-            case Tetris::T:
-            case Tetris::S:
-            case Tetris::Z:
-            case Tetris::L:
-            case Tetris::J: offsetX += 0; break; // Các miếng 3x3 thường đã khá ổn
-            default: break;
-        }
-
-        drawPiece(nextType, 0, 0, 0, previewBlocks, offsetX, offsetY, true);
+        // Panel at (186, 40), size 48x48. Blocks 12x12.
+        // Center a 4x4 matrix (48x48) inside panel.
+        drawPiece(nextType, 0, 0, 0, previewBlocks, 186, 40, true);
     }
 
     // Update Sidebars (Score, Level, Lines, Goal)
@@ -430,24 +413,31 @@ void GameViewView::handleKeyEvent(uint8_t key)
     // Typical key codes for Simulator:
     // Left: 71, Right: 72, Up: 73, Down: 74
     // A: 97, D: 100, W: 119, S: 115
-	switch (key)
+    
+    switch (key)
     {
-    case 97: // Arrow Left
+    case 71: // Arrow Left
+    case 'a':
+    case 'A':
         presenter->handleLeft();
         break;
-    case 100: // Arrow Right
+    case 72: // Arrow Right
+    case 'd':
+    case 'D':
         presenter->handleRight();
         break;
-    case 119: // Arrow Up (Rotate)
+    case 73: // Arrow Up (Rotate)
+    case 'w':
+    case 'W':
         presenter->handleRotate();
         break;
-    case 115: // Arrow Down
+    case 74: // Arrow Down
+    case 's':
+    case 'S':
         presenter->handleDown();
         break;
-    case 32: // Space Bar (Hard Drop)
-        presenter->handleHardDrop();
-        break;
     }
+
     updateBoard();
 }
 

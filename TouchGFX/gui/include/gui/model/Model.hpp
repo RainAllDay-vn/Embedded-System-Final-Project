@@ -22,7 +22,6 @@ public:
     void moveRight();
     void rotate();
     void step(); // Move down one step (gravity)
-    void hardDrop();
 
     // Getters for UI
     Tetris::TetrominoType getCurrentPieceType() const { return currentType; }
@@ -31,7 +30,6 @@ public:
     int getCurrentY() const { return currentY; }
     int getCurrentRotation() const { return currentRotation; }
     int getGhostY() const;
-    int getHighScore(int index) const { return highScores[index]; }
     signed char getGridValue(int x, int y) const { return grid[y][x]; }
 
     bool getIsGameOver() const { return isGameOver; }
@@ -41,7 +39,6 @@ public:
     bool getIsPaused() const { return isPaused; }
     void togglePause();
     void resetGame();
-
 
 protected:
     ModelListener* modelListener;
@@ -63,12 +60,10 @@ protected:
 
     int tickCounter;
     int dropSpeed; // Ticks per drop
-    int highScores[3];
 
     void spawnPiece();
     void lockPiece();
     void checkLines();
-    void updateHighScores();
     bool isCollision(int x, int y, int rotation) const;
     Tetris::TetrominoType getRandomPiece();
 };
