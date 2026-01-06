@@ -16,3 +16,8 @@ void MainViewPresenter::deactivate()
 {
 
 }
+
+void MainViewPresenter::getHighScores(int* buffer)
+{
+    model->getHighScores(buffer);
+}

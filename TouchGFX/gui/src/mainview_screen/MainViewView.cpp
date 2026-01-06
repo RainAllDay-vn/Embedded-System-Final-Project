@@ -49,6 +49,69 @@ void MainViewView::setupScreen()
         // Insert after background but before logo/buttons
         insert(&background, backgroundBlocks[i]);
     }
+    // 5. Setup High Score Modal (Initially hidden)
+    highScoreModal.setPosition(40, 60, 160, 200);
+    highScoreModal.setVisible(false);
+
+    // Modal Background (Gunmetal #2A3B55)
+    modalBackground.setPosition(0, 0, 160, 200);
+    modalBackground.setColor(touchgfx::Color::getColorFromRGB(0x2A, 0x3B, 0x55));
+    highScoreModal.add(modalBackground);
+
+    // Modal Border (White)
+    touchgfx::colortype modalBorderColor = touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF);
+    modalBorder[0].setPosition(0, 0, 160, 2); 
+    modalBorder[1].setPosition(0, 198, 160, 2);
+    modalBorder[2].setPosition(0, 0, 2, 200);
+    modalBorder[3].setPosition(158, 0, 2, 200);
+    for(int i=0; i<4; i++)
+    {
+        modalBorder[i].setColor(modalBorderColor);
+        highScoreModal.add(modalBorder[i]);
+    }
+
+    // Title
+    modalTitle.setTypedText(touchgfx::TypedText(T_HIGH_SCORES));
+    modalTitle.setXY(0, 15);
+    modalTitle.setWidth(160);
+    modalTitle.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xD5, 0x00)); // Gold
+    highScoreModal.add(modalTitle);
+
+    // Score Lines
+    for(int i=0; i<3; i++)
+    {
+        scoreLines[i].setTypedText(touchgfx::TypedText(T_WILDCARD));
+        scoreLines[i].setXY(0, 60 + (i * 30));
+        scoreLines[i].setWidth(160);
+        scoreLines[i].setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
+        Unicode::snprintf(scoreBuffers[i], 10, "000000");
+        scoreLines[i].setWildcard(scoreBuffers[i]);
+        highScoreModal.add(scoreLines[i]);
+    }
+
+    // Close Button (at bottom)
+    closeBtn.setPosition(40, 160, 80, 30);
+    closeBtnRec.setPosition(0, 0, 80, 30);
+    closeBtnRec.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0x00, 0x3C)); // Neon Red
+    closeBtn.add(closeBtnRec);
+
+    closeBtnLabel.setTypedText(touchgfx::TypedText(T_WILDCARD));
+    
+    // Note: We don't have T_CLOSE, so we use wildcard. 
+    // Wait, reusing T_WILDCARD for "CLOSE" needs a static buffer if we set it continually.
+    // Instead, let's just use "MENU" or wait, "CLOSE" is 5 chars.
+    // Let's use T_WILDCARD and hardcode a buffer.
+    static touchgfx::Unicode::UnicodeChar closeBufferStatic[10];
+    Unicode::snprintf(closeBufferStatic, 10, "CLOSE");
+    closeBtnLabel.setWildcard(closeBufferStatic);
+    closeBtnLabel.setXY(0, 5);
+    closeBtnLabel.setWidth(80);
+    closeBtnLabel.setColor(touchgfx::Color::getColorFromRGB(0xFF, 0xFF, 0xFF));
+    closeBtn.add(closeBtnLabel);
+    
+    highScoreModal.add(closeBtn);
+
+    add(highScoreModal);
 }
 
 void MainViewView::handleTickEvent()
@@ -101,15 +164,56 @@ void MainViewView::setupButton(touchgfx::Container& btn, touchgfx::Box& bg, touc
     add(btn);
 }
 
+void MainViewView::showHighScoreModal()
+{
+    int scores[3];
+    presenter->getHighScores(scores);
+
+    for(int i=0; i<3; i++)
+    {
+        Unicode::snprintf(scoreBuffers[i], 10, "%06d", scores[i]);
+        scoreLines[i].invalidate();
+    }
+    highScoreModal.setVisible(true);
+    highScoreModal.invalidate();
+}
+
+void MainViewView::hideHighScoreModal()
+{
+    highScoreModal.setVisible(false);
+    highScoreModal.invalidate();
+}
+
 void MainViewView::handleClickEvent(const touchgfx::ClickEvent& event)
 {
     if (event.getType() == touchgfx::ClickEvent::RELEASED)
     {
+        // Check Modal interactions first if visible
+        if (highScoreModal.isVisible())
+        {
+            // Close Button relative to modal (40, 160, 80, 30) + Modal Position (40, 60)
+            // Absolute position: X=80..160, Y=220..250
+            if (event.getX() >= 80 && event.getX() <= 160 &&
+                event.getY() >= 220 && event.getY() <= 250)
+            {
+                hideHighScoreModal();
+            }
+            // Consume click if modal is open
+            return; 
+        }
+
         // NEW GAME Button click check
         if (event.getX() >= 40 && event.getX() <= 200 &&
             event.getY() >= 160 && event.getY() <= 200)
         {
             static_cast<FrontendApplication*>(touchgfx::Application::getInstance())->gotoGameViewScreenNoTransition();
+        }
+
+        // HIGH SCORES Button click check
+        if (event.getX() >= 40 && event.getX() <= 200 &&
+            event.getY() >= 220 && event.getY() <= 260)
+        {
+            showHighScoreModal();
         }
     }
 

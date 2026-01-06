@@ -27,6 +27,8 @@ public:
 
     virtual ~MainViewPresenter() {}
 
+    void getHighScores(int* buffer);
+
 private:
     MainViewPresenter();
 
