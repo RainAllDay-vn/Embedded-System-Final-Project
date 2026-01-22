@@ -2,7 +2,6 @@
 #include <gui/model/ModelListener.hpp>
 #ifndef SIMULATOR
 #include "cmsis_os.h"
-#include "main.h"
 #endif
 
 #include <cstdlib>
@@ -15,9 +14,7 @@ extern osMessageQueueId_t inputQueueHandle;
 Model::Model() : 
     modelListener(0)
 {
-#ifdef SIMULATOR
     srand(static_cast<unsigned int>(time(NULL)));
-#endif
     
     // Hardcoded initial high scores
     highScores[0] = 5000;
@@ -315,11 +312,7 @@ void Model::spawnPiece()
 
 Tetris::TetrominoType Model::getRandomPiece()
 {
-#ifndef SIMULATOR
-    return static_cast<Tetris::TetrominoType>(GetRandomNumber() % Tetris::COUNT);
-#else
     return static_cast<Tetris::TetrominoType>(rand() % Tetris::COUNT);
-#endif
 }
 
 int Model::getGhostY() const
