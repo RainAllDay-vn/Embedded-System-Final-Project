@@ -8,6 +8,13 @@
 #include <ctime>
 
 #ifndef SIMULATOR
+extern "C"
+{
+    void Play_Startup_Melody(void);
+}
+#endif
+
+#ifndef SIMULATOR
 extern osMessageQueueId_t inputQueueHandle;
 #endif
 
@@ -52,6 +59,10 @@ void Model::resetGame()
 
     nextType = getRandomPiece();
     spawnPiece();
+
+#ifndef SIMULATOR
+    Play_Startup_Melody();
+#endif
 
     if (modelListener != 0)
     {
