@@ -26,6 +26,7 @@ EWARM/*.custom_argvars
 STM32CubeIDE/.settings/
 STM32CubeIDE/Debug/
 STM32CubeIDE/Release/
+Drivers/
 
 # Keil
 MDK-ARM/RTE/
@@ -37,3 +38,4 @@ MDK-ARM/*vguix.*
 
 # CMake
 build/*
+.kilocode/

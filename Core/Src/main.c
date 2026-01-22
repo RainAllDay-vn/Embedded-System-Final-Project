@@ -98,6 +98,16 @@ volatile uint8_t pb13_sw = 0;
 volatile uint8_t pg2_sw = 0;
 volatile uint8_t pg3_sw = 0;
 osMessageQueueId_t inputQueueHandle;
+
+osTimerId_t timerUpHandle;
+osTimerId_t timerDownHandle;
+volatile uint8_t up_processed = 0;
+volatile uint8_t down_processed = 0;
+
+volatile uint32_t last_irq_time_up = 0;
+volatile uint32_t last_irq_time_down = 0;
+volatile uint32_t last_irq_time_left = 0;
+volatile uint32_t last_irq_time_right = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -114,6 +124,8 @@ void StartDefaultTask(void *argument);
 extern void TouchGFX_Task(void *argument);
 
 /* USER CODE BEGIN PFP */
+void CallbackTimerUp(void *argument);
+void CallbackTimerDown(void *argument);
 static void BSP_SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command);
 
 
@@ -208,6 +220,11 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
+  const osTimerAttr_t timerUp_attributes = { .name = "timerUp" };
+  timerUpHandle = osTimerNew(CallbackTimerUp, osTimerOnce, NULL, &timerUp_attributes);
+
+  const osTimerAttr_t timerDown_attributes = { .name = "timerDown" };
+  timerDownHandle = osTimerNew(CallbackTimerDown, osTimerOnce, NULL, &timerDown_attributes);
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -666,7 +683,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PB12 PB13 */
   GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -679,7 +696,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PG2 PG3 */
   GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
@@ -690,10 +707,90 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI2_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+/**
+  * @brief  EXTI line detection callback.
+  * @param  GPIO_Pin: Specifies the port pin connected to corresponding EXTI line.
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  uint32_t current_time = HAL_GetTick();
+  uint32_t flags_to_set = 0;
+
+  switch (GPIO_Pin) {
+    case GPIO_PIN_12: // UP (PB12)
+      if (current_time - last_irq_time_up > 50) {
+        last_irq_time_up = current_time;
+        if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) {
+          flags_to_set |= 0x01; // Press
+        } else {
+          flags_to_set |= 0x02; // Release
+        }
+      }
+      break;
+
+    case GPIO_PIN_13: // RIGHT (PB13)
+      if (current_time - last_irq_time_right > 50) {
+        last_irq_time_right = current_time;
+        if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_SET) { // Release
+          flags_to_set |= 0x10;
+        }
+      }
+      break;
+
+    case GPIO_PIN_2: // DOWN (PG2)
+      if (current_time - last_irq_time_down > 50) {
+        last_irq_time_down = current_time;
+        if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_2) == GPIO_PIN_RESET) {
+          flags_to_set |= 0x04; // Press
+        } else {
+          flags_to_set |= 0x08; // Release
+        }
+      }
+      break;
+
+    case GPIO_PIN_3: // LEFT (PG3)
+      if (current_time - last_irq_time_left > 50) {
+        last_irq_time_left = current_time;
+        if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_3) == GPIO_PIN_SET) { // Release
+          flags_to_set |= 0x20;
+        }
+      }
+      break;
+  }
+
+  if (flags_to_set != 0) {
+    osThreadFlagsSet(defaultTaskHandle, flags_to_set);
+  }
+}
+
+void CallbackTimerUp(void *argument)
+{
+  up_processed = 1;
+  uint8_t key = 'S'; // Swap/Hold
+  osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+}
+
+void CallbackTimerDown(void *argument)
+{
+  down_processed = 1;
+  uint8_t key = 'H'; // Hard Drop
+  osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+}
+
 /**
   * @brief  Perform the SDRAM external memory initialization sequence
   * @param  hsdram: SDRAM handle
@@ -1029,83 +1126,51 @@ void LCD_Delay(uint32_t Delay)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  
   uint8_t key;
-  // 0: Released, 1: Pressed, 2: Processed (Held)
-  uint8_t state_up = 0, state_right = 0, state_down = 0, state_left = 0;
-  uint32_t timer_down = 0; // Only down needs a timer for Hard Drop
-  uint32_t timer_up = 0;   // Up needs timer for Hold Piece
+  uint32_t flags;
 
   /* Infinite loop */
   for(;;)
   {
-    // --- UP (PB12) with HOLD (Swap) logic ---
-    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) { // Pressed
-        if (state_up == 0) {
-            state_up = 1;
-            timer_up = 0;
-        } else if (state_up == 1) {
-            timer_up += 20;
-            if (timer_up > 500) {
-                // Hold detected -> Swap/Hold Piece
-                key = 'S';
-                osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-                state_up = 2; // Mark as processed
-            }
-        }
-    } else { // Released
-        if (state_up == 1) { // Was Short Press
-            key = 'U';
-            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-        }
-        state_up = 0;
+    flags = osThreadFlagsWait(0x3F, osFlagsWaitAny, osWaitForever);
+
+    // --- UP (PB12) ---
+    if (flags & 0x01) { // Press
+      up_processed = 0;
+      osTimerStart(timerUpHandle, 500);
+    }
+    if (flags & 0x02) { // Release
+      osTimerStop(timerUpHandle);
+      if (up_processed == 0) {
+        key = 'U'; // Rotate
+        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+      }
     }
 
-    // --- RIGHT (PB13) ---
-    if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_RESET) { // Pressed
-        if (state_right == 0) state_right = 1;
-    } else { // Released
-        if (state_right == 1) {
-            key = 'R';
-            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-        }
-        state_right = 0;
+    // --- DOWN (PG2) ---
+    if (flags & 0x04) { // Press
+      down_processed = 0;
+      osTimerStart(timerDownHandle, 500);
+    }
+    if (flags & 0x08) { // Release
+      osTimerStop(timerDownHandle);
+      if (down_processed == 0) {
+        key = 'D'; // Soft Drop
+        osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+      }
     }
 
-    // --- LEFT (PG3) ---
-    if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_3) == GPIO_PIN_RESET) { // Pressed
-        if (state_left == 0) state_left = 1;
-    } else { // Released
-        if (state_left == 1) {
-            key = 'L';
-            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-        }
-        state_left = 0;
+    // --- RIGHT ---
+    if (flags & 0x10) { // Release
+      key = 'R';
+      osMessageQueuePut(inputQueueHandle, &key, 0, 0);
     }
 
-    // --- DOWN (PG2) with HOLD logic ---
-    if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_2) == GPIO_PIN_RESET) { // Pressed
-        if (state_down == 0) {
-            state_down = 1;
-            timer_down = 0;
-        } else if (state_down == 1) {
-            timer_down += 20;
-            if (timer_down > 500) {
-                // Hold detected -> Hard Drop
-                key = 'H';
-                osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-                state_down = 2; // Mark as processed
-            }
-        }
-    } else { // Released
-        if (state_down == 1) { // Was Short Press
-            key = 'D';
-            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-        }
-        state_down = 0;
+    // --- LEFT ---
+    if (flags & 0x20) { // Release
+      key = 'L';
+      osMessageQueuePut(inputQueueHandle, &key, 0, 0);
     }
-
-    osDelay(20);
   }
   /* USER CODE END 5 */
 }
