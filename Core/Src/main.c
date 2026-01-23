@@ -38,7 +38,7 @@ typedef struct {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define REFRESH_COUNT           ((uint32_t)1386)   /* SDRAM refresh counter */
+#define REFRESH_COUNT           ((uint32_t)1292)   /* SDRAM refresh counter (Adjusted for 84MHz SDRAM Clock) */
 #define SDRAM_TIMEOUT           ((uint32_t)0xFFFF)
 
 /**
@@ -77,6 +77,8 @@ LTDC_HandleTypeDef hltdc;
 RNG_HandleTypeDef hrng;
 
 SPI_HandleTypeDef hspi5;
+
+TIM_HandleTypeDef htim10;
 
 UART_HandleTypeDef huart1;
 
@@ -127,10 +129,17 @@ static void MX_LTDC_Init(void);
 static void MX_DMA2D_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_RNG_Init(void);
+static void MX_TIM10_Init(void);
 void StartDefaultTask(void *argument);
 extern void TouchGFX_Task(void *argument);
 
 /* USER CODE BEGIN PFP */
+void Buzzer_SetFrequency(uint32_t freq);
+void Buzzer_Stop(void);
+
+void Play_Startup_Melody(void);
+void MarioMusicTask(void *argument);
+
 void CallbackTimerUp(void *argument);
 void CallbackTimerDown(void *argument);
 static void BSP_SDRAM_Initialization_Sequence(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command);
@@ -165,6 +174,84 @@ uint16_t                  IOE_ReadMultiple(uint8_t Addr, uint8_t Reg, uint8_t *p
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/* ===== BUZZER CORE ===== */
+void Buzzer_SetFrequency(uint32_t freq)
+{
+    if (freq == 0)
+    {
+        __HAL_TIM_SET_COMPARE(&htim10, TIM_CHANNEL_1, 0);
+        return;
+    }
+
+    /* Timer runs at 1MHz (Prescaler 167 for 168MHz APB2) */
+    uint32_t period = (1000000 / freq) - 1;
+    __HAL_TIM_SET_AUTORELOAD(&htim10, period);
+    __HAL_TIM_SET_COMPARE(&htim10, TIM_CHANNEL_1, period / 2);
+}
+
+void Buzzer_Stop(void)
+{
+    __HAL_TIM_SET_COMPARE(&htim10, TIM_CHANNEL_1, 0);
+}
+
+/* ===== NOTE DEFINITIONS ===== */
+#define C4 262
+#define D4 294
+#define E4 330
+#define F4 349
+#define G4 392
+#define A4 440
+#define B4 494
+#define C5 523
+#define E5 659
+#define G5 784
+
+/* ===== STARTUP MELODY ===== */
+void Play_Startup_Melody(void)
+{
+    Buzzer_SetFrequency(C4); HAL_Delay(150);
+    Buzzer_SetFrequency(E4); HAL_Delay(150);
+    Buzzer_SetFrequency(G4); HAL_Delay(150);
+    Buzzer_SetFrequency(C5); HAL_Delay(300);
+    Buzzer_Stop();
+}
+
+/* ===== MARIO THEME (LOOP) ===== */
+const uint16_t mario_notes[] = {
+    E5, E5, 0, E5, 0, C5, E5, 0,
+    G5, 0, 0, 0,
+    G4, 0, 0, 0
+};
+
+const uint16_t mario_durations[] = {
+    100,100,100,100,100,100,100,100,
+    300,100,100,100,
+    300,100,100,100
+};
+
+void MarioMusicTask(void *argument)
+{
+    /* Ensure PWM is started */
+    HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+
+    uint32_t i = 0;
+    const uint32_t len = sizeof(mario_notes)/sizeof(mario_notes[0]);
+
+    for (;;)
+    {
+        if (mario_notes[i] == 0) {
+             Buzzer_Stop();
+        } else {
+             Buzzer_SetFrequency(mario_notes[i]);
+        }
+        osDelay(mario_durations[i]);
+
+        i++;
+        if (i >= len) i = 0;
+    }
+}
+
 static LCD_DrvTypeDef* LcdDrv;
 
 uint32_t I2c3Timeout = I2C3_TIMEOUT_MAX; /*<! Value of Timeout when I2C communication fails */
@@ -208,10 +295,14 @@ int main(void)
   MX_DMA2D_Init();
   MX_USART1_UART_Init();
   MX_RNG_Init();
+  MX_TIM10_Init();
   MX_TouchGFX_Init();
   /* Call PreOsInit function */
   MX_TouchGFX_PreOSInit();
   /* USER CODE BEGIN 2 */
+
+  HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+  Play_Startup_Melody();
 
   /* USER CODE END 2 */
 
@@ -250,6 +341,13 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  const osThreadAttr_t marioTask_attributes = {
+    .name = "MarioMusic",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityLow,
+  };
+  osThreadNew(MarioMusicTask, NULL, &marioTask_attributes);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -568,6 +666,52 @@ static void MX_SPI5_Init(void)
     isRevD = 1;
   }
   /* USER CODE END SPI5_Init 2 */
+
+}
+
+/**
+  * @brief TIM10 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM10_Init(void)
+{
+
+  /* USER CODE BEGIN TIM10_Init 0 */
+
+  /* USER CODE END TIM10_Init 0 */
+
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM10_Init 1 */
+
+  /* USER CODE END TIM10_Init 1 */
+  htim10.Instance = TIM10;
+  htim10.Init.Prescaler = 167;
+  htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim10.Init.Period = 999;
+  htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim10) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim10, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM10_Init 2 */
+
+  /* USER CODE END TIM10_Init 2 */
+  HAL_TIM_MspPostInit(&htim10);
 
 }
 
