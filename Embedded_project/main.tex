@@ -1,0 +1,185 @@
+\documentclass[12pt, a4paper]{article}
+
+% GÓI NGÔN NGỮ VÀ FONT
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{helvet} 
+\usepackage{color} % Thêm gói màu
+\usepackage{xcolor}
+\usepackage{tabularx} % Hỗ trợ bảng tự động chỉnh độ rộng cột
+\usepackage{booktabs} % Giúp đường kẻ bảng chuyên nghiệp hơn
+\usepackage{listings} % For code snippets
+\usepackage{float}
+\renewcommand{\arraystretch}{1.4} % Tăng khoảng cách giữa các dòng trong bảng
+
+% CODE LISTING STYLE
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% GÓI BỐ CỤC VÀ HÌNH ẢNH
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx} 
+\usepackage[hidelinks]{hyperref} 
+\usepackage{booktabs} 
+\usepackage{parskip} 
+\usepackage{float}
+\usepackage{fancyhdr} 
+\usepackage{titlesec} 
+\usepackage{longtable} % Cho bảng dài qua trang
+\usepackage{array}
+
+% TÙY CHỈNH TIÊU ĐỀ SECTION
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{blue!60!black}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{black}}
+  {\thesubsection}{1em}{}
+
+% HỘP ĐỂ GIỮ CHỖ HÌNH ẢNH
+\newcommand{\imageplaceholder}[2]{
+  \begin{figure}[H]
+    \centering
+    \fbox{
+      \parbox[c][#1][c]{0.8\textwidth}{
+        \centering
+        \vspace{10pt}
+        \texttt{#2}
+        \vspace{10pt}
+      }
+    }
+    \caption{#2}
+  \end{figure}
+}
+
+% --- BẮT ĐẦU TÀI LIỆU ---
+\begin{document}
+
+% --- BẮT ĐẦU TRANG BÌA MỚI ---
+\begin{titlepage}
+    \centering
+    \pagestyle{empty} % <-- Đảm bảo trang này không có header/footer
+    
+    % 1. Thông tin trường
+    {\Large \textbf{Hanoi University of Science and Technology}} \\
+    \vspace{0.2cm}
+    {\large School of Information and Communication Technology} \\
+    
+    \vspace{1.5cm}
+    
+    % 2. Logo
+    \includegraphics[width=0.3\textwidth]{logo_hust.png} \\
+    
+    \vspace{1.5cm}
+    
+    % 3. Tiêu đề chính
+    {\huge \textbf{Project Report: Game Tetris using STM32CubeIDE hardware and software}} \\
+    \vspace{1cm}
+    
+    % 4. Thông tin môn học
+    {\LARGE IT4210E - Embedded Systems} \\
+    \vspace{0.5cm}
+    
+    \vfill % <-- Đẩy nội dung bên dưới xuống
+    
+    % 6. Thông tin nhóm
+    {\Large \textbf{Group Members:}} \\
+    \vspace{0.5cm}
+    {\large
+    Group 5 - Class: 161346\\
+    Luong Ngoc Vu Long - 20235967\\
+    Tran Sy Nguyen - 20235985\\
+    Nguyen Vu Anh Khoa - 20235957
+    } \\ 
+    
+    \vspace{2cm}
+    
+    % 7. Giảng viên
+    {\Large \textbf{Lecturers:}} \\
+    \vspace{0.5cm}
+    {\large
+    Prof. Ngô Lam Trung
+    }
+    
+    \vfill % <-- Đẩy ngày tháng xuống dưới cùng
+    
+    % 8. Ngày tháng
+    {\large \today}
+    
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+This project aims to replicate the classic arcade game "Tetris" on an embedded system platform. The primary goal is to demonstrate the integration of real-time operating systems (FreeRTOS), graphical user interfaces (TouchGFX), and hardware peripheral control (GPIO, Timers, Interrupts) on the STM32F429I-DISCO development board.
+
+The system features a 240x320 pixel color display, a dedicated audio engine for background music and sound effects using PWM, and physical button controls for game interaction. The software architecture is designed using the Model-View-Presenter (MVP) pattern provided by TouchGFX, ensuring a clean separation between game logic and visual rendering.
+
+\section{Hardware Design}
+
+\subsection{Development Board Specifications}
+
+\subsection{Peripheral Configuration}
+
+\subsubsection{Display Subsystem (LTDC \& DMA2D)}
+
+\subsubsection{Audio Subsystem (PWM)}
+
+\subsubsection{Input Controls (GPIO \& EXTI)}
+
+\section{Software Design}
+
+\subsection{Software Architecture Overview}
+
+\subsection{FreeRTOS Configuration}
+
+\subsection{Game Logic (The Model)}
+
+\subsubsection{Grid Representation}
+
+\subsubsection{Game Loop (`tick`)}
+
+\subsection{Audio Engine Implementation}
+
+\subsection{User Interface Design}
+
+\subsubsection{Main Menu}
+
+\subsubsection{Game Screen}
+
+\subsection{Input Debouncing}
+
+\subsection{Memory Management}
+
+\section{Results and Conclusion}
+
+\subsection{Project Outcomes}
+
+\subsection{Future Improvements}
+
+\end{document}
