@@ -22,6 +22,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
+#include "cmsis_os.h"
+#include "SoundEngine.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,4 +59,8 @@
 /* USER CODE BEGIN Application */
      
 /* USER CODE END Application */
+
+/* External Sound Engine Task Function */
+extern void SoundEngineTask(void *argument);
+void SoundEngine_Init(void); // Prototype
 

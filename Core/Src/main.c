@@ -301,9 +301,6 @@ int main(void)
   MX_TouchGFX_PreOSInit();
   /* USER CODE BEGIN 2 */
 
-  HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-  Play_Startup_Melody();
-
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -340,13 +337,15 @@ int main(void)
   GUI_TaskHandle = osThreadNew(TouchGFX_Task, NULL, &GUI_Task_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  const osThreadAttr_t marioTask_attributes = {
-    .name = "MarioMusic",
-    .stack_size = 512 * 4,
+  /* Remove old Mario task, use new SoundEngine */
+  SoundEngine_Init();
+  
+  const osThreadAttr_t soundTask_attributes = {
+    .name = "SoundTask",
+    .stack_size = 256 * 4,
     .priority = (osPriority_t) osPriorityLow,
   };
-  osThreadNew(MarioMusicTask, NULL, &marioTask_attributes);
+  osThreadNew(SoundEngineTask, NULL, &soundTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
