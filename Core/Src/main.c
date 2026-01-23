@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "Components/ili9341/ili9341.h"
 #include <stdio.h>
+#include "SoundEngine.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -301,6 +302,8 @@ int main(void)
   MX_TouchGFX_PreOSInit();
   /* USER CODE BEGIN 2 */
 
+  SoundEngine_Init();
+  
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -338,7 +341,6 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* Remove old Mario task, use new SoundEngine */
-  SoundEngine_Init();
   
   const osThreadAttr_t soundTask_attributes = {
     .name = "SoundTask",
@@ -346,7 +348,6 @@ int main(void)
     .priority = (osPriority_t) osPriorityLow,
   };
   osThreadNew(SoundEngineTask, NULL, &soundTask_attributes);
-
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

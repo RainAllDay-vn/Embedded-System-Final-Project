@@ -2,7 +2,13 @@
 #include <touchgfx/Color.hpp>
 #include <gui/common/FrontendApplication.hpp>
 
-GameViewView::GameViewView()
+extern "C" {
+    #include "SoundEngine.h"
+}
+
+GameViewView::GameViewView() :
+    lastLines(0),
+    wasGameOver(false)
 {
 
 }
@@ -10,6 +16,13 @@ GameViewView::GameViewView()
 void GameViewView::setupScreen()
 {
     GameViewViewBase::setupScreen();
+
+    // Start Game Theme
+    SoundEngine_PlayTrack(TRACK_GAME_THEME_A);
+
+    // Initial State
+    lastLines = presenter->getLines();
+    wasGameOver = presenter->getIsGameOver();
 
     // 1. Configure Matrix Container (Centered: 58 to 182px horizontally)
     // Inner Grid size: 10 columns * 12px = 120px wide, 20 rows * 12px = 240px high.
@@ -366,6 +379,13 @@ void GameViewView::updateBoard()
     // Update Sidebars (Score, Level, Lines, Goal)
     ScoreInfo scoreboard[4];
     presenter->getScoreboard(scoreboard);
+    
+    // Check for Line Clear
+    int currentLines = presenter->getLines();
+    if (currentLines > lastLines) {
+        SoundEngine_PlayTrack(TRACK_LINE_CLEAR);
+    }
+    lastLines = currentLines;
 
     for(int i=0; i<4; i++)
     {
@@ -398,12 +418,18 @@ void GameViewView::updateBoard()
     // Handle Game Over
     if (presenter->getIsGameOver())
     {
+        if (!wasGameOver) {
+            SoundEngine_PlayTrack(TRACK_GAME_OVER);
+            wasGameOver = true;
+        }
+
         gameOverLabel.setVisible(true);
         Unicode::snprintf(pauseButtonBuffer, 10, "RESET");
         pauseButton.setTypedText(touchgfx::TypedText(T_WILDCARD));
     }
     else
     {
+        wasGameOver = false; // Reset trigger if restarted
         gameOverLabel.setVisible(false);
         // Handle Pause logic only if not Game Over
         if (presenter->getIsPaused())

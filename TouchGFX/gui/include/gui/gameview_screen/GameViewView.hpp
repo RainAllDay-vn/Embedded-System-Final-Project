@@ -24,6 +24,8 @@ public:
 
     void updateBoard();
 protected:
+    int lastLines;
+    bool wasGameOver;
     static const int MATRIX_COLS = 10;
     static const int MATRIX_ROWS = 20;
     static const int CELL_SIZE = 12;

@@ -11,6 +11,7 @@
 
 extern "C" {
     extern RNG_HandleTypeDef hrng;
+    #include "SoundEngine.h"
 }
 
 static int getRandom(int max) {
@@ -34,6 +35,7 @@ MainViewView::MainViewView()
 void MainViewView::setupScreen()
 {
     MainViewViewBase::setupScreen();
+    SoundEngine_PlayTrack(TRACK_MENU);
 
     // 1. Background (Oxford Blue #0A1128)
     background.setPosition(0, 0, 240, 320);
