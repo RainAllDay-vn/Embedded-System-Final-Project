@@ -135,15 +135,14 @@ void SoundEngine_SetVolume(uint8_t volume)
 void SoundEngineTask(void *argument)
 {
     TrackID currentRequest;
+    TrackID currentTrack = TRACK_NONE;
+    TrackID activeBGM = TRACK_NONE;
     const MusicNote* currentMelody = NULL;
     uint32_t noteIndex = 0;
-    uint32_t lastWakeTime;
     
     /* Ensure hardware initialized */
     HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
     
-    lastWakeTime = osKernelGetTickCount();
-
     for(;;)
     {
         /* Check for new track request */
@@ -154,23 +153,31 @@ void SoundEngineTask(void *argument)
         {
             /* Process New Request */
             noteIndex = 0;
+            currentTrack = currentRequest;
+
             switch(currentRequest)
             {
                 case TRACK_MENU:
                     currentMelody = melody_menu;
+                    activeBGM = TRACK_MENU;
                     break;
                 case TRACK_GAME_THEME_A:
                     currentMelody = melody_game;
+                    activeBGM = TRACK_GAME_THEME_A;
                     break;
                 case TRACK_GAME_OVER:
                     currentMelody = melody_gameover;
+                    // SFX: don't change activeBGM
                     break;
                 case TRACK_LINE_CLEAR:
                     currentMelody = melody_clear;
+                    // SFX: don't change activeBGM
                     break;
                 case TRACK_NONE:
                 default:
                     currentMelody = NULL;
+                    activeBGM = TRACK_NONE;
+                    currentTrack = TRACK_NONE;
                     SetFrequency(0);
                     break;
             }
@@ -184,36 +191,36 @@ void SoundEngineTask(void *argument)
             /* Check for terminator */
             if (note.duration == 0 && note.frequency == 0)
             {
-                /* Loop logic:
-                   If Game Theme or Menu -> Loop
-                   If SFX (Clear/GameOver) -> Stop
-                */
-                if (currentMelody == melody_game || currentMelody == melody_menu)
+                /* Termination/Loop Logic */
+                if (currentTrack == TRACK_MENU || currentTrack == TRACK_GAME_THEME_A)
                 {
-                    noteIndex = 0; // Restart
+                    noteIndex = 0; // Restart BGM Loop
                 }
                 else
                 {
-                    currentMelody = NULL; // Stop
+                    /* SFX Finished: Wait a bit before resuming BGM */
                     SetFrequency(0);
+                    osDelay(1000); // Increased gap to 1 second for better separation
+
+                    if (activeBGM != TRACK_NONE)
+                    {
+                        currentTrack = activeBGM;
+                        noteIndex = 0;
+                        currentMelody = (activeBGM == TRACK_MENU) ? melody_menu : melody_game;
+                    }
+                    else
+                    {
+                        currentTrack = TRACK_NONE;
+                        currentMelody = NULL;
+                        SetFrequency(0);
+                    }
                 }
             }
             else
             {
                 /* Play Note */
                 SetFrequency(note.frequency);
-                
-                /* Wait for duration */
-                /* Use vTaskDelayUntil or osDelay? 
-                   osDelay is sufficient here. 
-                   Allows queue to accumulate if needed.
-                */
                 osDelay(note.duration);
-                
-                /* Slight gap between notes for articulation? 
-                   Optional. For now, continuous.
-                */
-                
                 noteIndex++;
             }
         }
