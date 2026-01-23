@@ -30,7 +30,10 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef struct {
+  uint16_t pin;
+  uint8_t state; // 0=Pressed, 1=Released
+} ButtonEvent_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -100,6 +103,7 @@ volatile uint8_t pb13_sw = 0;
 volatile uint8_t pg2_sw = 0;
 volatile uint8_t pg3_sw = 0;
 osMessageQueueId_t inputQueueHandle;
+osMessageQueueId_t buttonEventQueueHandle;
 
 osTimerId_t timerUpHandle;
 osTimerId_t timerDownHandle;
@@ -234,6 +238,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   inputQueueHandle = osMessageQueueNew(2, sizeof(uint8_t), NULL);
+  buttonEventQueueHandle = osMessageQueueNew(2, sizeof(ButtonEvent_t), NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -753,25 +758,29 @@ static void MX_GPIO_Init(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   uint32_t current_time = HAL_GetTick();
-  uint32_t flags_to_set = 0;
+  ButtonEvent_t event;
+  event.pin = GPIO_Pin;
+  uint8_t send_event = 0;
 
   switch (GPIO_Pin) {
     case GPIO_PIN_12: // UP (PB12)
       if (current_time - last_irq_time_up > 50) {
         last_irq_time_up = current_time;
         if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) {
-          flags_to_set |= 0x01; // Press
+          event.state = 0; // Press
         } else {
-          flags_to_set |= 0x02; // Release
+          event.state = 1; // Release
         }
+        send_event = 1;
       }
       break;
 
     case GPIO_PIN_13: // RIGHT (PB13)
-      if (current_time - last_irq_time_right > 50) {
+      if (current_time - last_irq_time_right > 100) {
         last_irq_time_right = current_time;
         if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_13) == GPIO_PIN_SET) { // Release
-          flags_to_set |= 0x10;
+          event.state = 1;
+          send_event = 1;
         }
       }
       break;
@@ -780,10 +789,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       if (current_time - last_irq_time_down > 50) {
         last_irq_time_down = current_time;
         if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_2) == GPIO_PIN_RESET) {
-          flags_to_set |= 0x04; // Press
+          event.state = 0; // Press
         } else {
-          flags_to_set |= 0x08; // Release
+          event.state = 1; // Release
         }
+        send_event = 1;
       }
       break;
 
@@ -791,14 +801,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       if (current_time - last_irq_time_left > 50) {
         last_irq_time_left = current_time;
         if (HAL_GPIO_ReadPin(GPIOG, GPIO_PIN_3) == GPIO_PIN_SET) { // Release
-          flags_to_set |= 0x20;
+          event.state = 1;
+          send_event = 1;
         }
       }
       break;
   }
 
-  if (flags_to_set != 0) {
-    osThreadFlagsSet(defaultTaskHandle, flags_to_set);
+  if (send_event) {
+    osMessageQueuePut(buttonEventQueueHandle, &event, 0, 0);
   }
 }
 
@@ -1152,49 +1163,54 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
   uint8_t key;
-  uint32_t flags;
+  ButtonEvent_t event;
 
   /* Infinite loop */
   for(;;)
   {
-    flags = osThreadFlagsWait(0x3F, osFlagsWaitAny, osWaitForever);
+    if (osMessageQueueGet(buttonEventQueueHandle, &event, NULL, osWaitForever) == osOK)
+    {
+      // --- UP (PB12) ---
+      if (event.pin == GPIO_PIN_12) {
+        if (event.state == 0) { // Press
+          up_processed = 0;
+          osTimerStart(timerUpHandle, 500);
+        }
+        else if (event.state == 1) { // Release
+          osTimerStop(timerUpHandle);
+          if (up_processed == 0) {
+            key = 'U'; // Rotate
+            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+          }
+        }
+      }
 
-    // --- UP (PB12) ---
-    if (flags & 0x01) { // Press
-      up_processed = 0;
-      osTimerStart(timerUpHandle, 500);
-    }
-    if (flags & 0x02) { // Release
-      osTimerStop(timerUpHandle);
-      if (up_processed == 0) {
-        key = 'U'; // Rotate
+      // --- DOWN (PG2) ---
+      else if (event.pin == GPIO_PIN_2) {
+        if (event.state == 0) { // Press
+          down_processed = 0;
+          osTimerStart(timerDownHandle, 500);
+        }
+        else if (event.state == 1) { // Release
+          osTimerStop(timerDownHandle);
+          if (down_processed == 0) {
+            key = 'D'; // Soft Drop
+            osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+          }
+        }
+      }
+
+      // --- RIGHT (PB13) ---
+      else if (event.pin == GPIO_PIN_13 && event.state == 1) { // Release
+        key = 'R';
         osMessageQueuePut(inputQueueHandle, &key, 0, 0);
       }
-    }
 
-    // --- DOWN (PG2) ---
-    if (flags & 0x04) { // Press
-      down_processed = 0;
-      osTimerStart(timerDownHandle, 500);
-    }
-    if (flags & 0x08) { // Release
-      osTimerStop(timerDownHandle);
-      if (down_processed == 0) {
-        key = 'D'; // Soft Drop
+      // --- LEFT (PG3) ---
+      else if (event.pin == GPIO_PIN_3 && event.state == 1) { // Release
+        key = 'L';
         osMessageQueuePut(inputQueueHandle, &key, 0, 0);
       }
-    }
-
-    // --- RIGHT ---
-    if (flags & 0x10) { // Release
-      key = 'R';
-      osMessageQueuePut(inputQueueHandle, &key, 0, 0);
-    }
-
-    // --- LEFT ---
-    if (flags & 0x20) { // Release
-      key = 'L';
-      osMessageQueuePut(inputQueueHandle, &key, 0, 0);
     }
   }
   /* USER CODE END 5 */
