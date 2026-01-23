@@ -2,6 +2,11 @@
 #include <gui/model/ModelListener.hpp>
 #ifndef SIMULATOR
 #include "cmsis_os.h"
+#include "main.h"
+
+extern "C" {
+    extern RNG_HandleTypeDef hrng;
+}
 #endif
 
 #include <cstdlib>
@@ -14,8 +19,6 @@ extern osMessageQueueId_t inputQueueHandle;
 Model::Model() : 
     modelListener(0)
 {
-    srand(static_cast<unsigned int>(time(NULL)));
-    
     // Hardcoded initial high scores
     highScores[0] = 5000;
     highScores[1] = 4000;
@@ -312,6 +315,13 @@ void Model::spawnPiece()
 
 Tetris::TetrominoType Model::getRandomPiece()
 {
+#ifndef SIMULATOR
+    uint32_t randomValue = 0;
+    if (HAL_RNG_GenerateRandomNumber(&hrng, &randomValue) == HAL_OK)
+    {
+        return static_cast<Tetris::TetrominoType>(randomValue % Tetris::COUNT);
+    }
+#endif
     return static_cast<Tetris::TetrominoType>(rand() % Tetris::COUNT);
 }
 

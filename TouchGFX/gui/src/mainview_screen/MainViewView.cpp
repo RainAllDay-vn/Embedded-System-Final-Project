@@ -6,6 +6,26 @@
 #include <touchgfx/TypedText.hpp>
 #include <cstdlib>
 
+#ifndef SIMULATOR
+#include "main.h"
+
+extern "C" {
+    extern RNG_HandleTypeDef hrng;
+}
+
+static int getRandom(int max) {
+    uint32_t val = 0;
+    if (HAL_RNG_GenerateRandomNumber(&hrng, &val) == HAL_OK) {
+        return val % max;
+    }
+    return 0;
+}
+#else
+static int getRandom(int max) {
+    return rand() % max;
+}
+#endif
+
 MainViewView::MainViewView()
 {
 
@@ -41,11 +61,11 @@ void MainViewView::setupScreen()
     for (int i = 0; i < 10; i++)
     {
         backgroundBlocks[i].setBitmap(touchgfx::Bitmap(blocks[i % 7]));
-        int x = rand() % 228;
-        int y = rand() % 400 - 100; // Some start off-screen, some on-screen
+        int x = getRandom(228);
+        int y = getRandom(400) - 100; // Some start off-screen, some on-screen
         backgroundBlocks[i].setXY(x, y);
         backgroundBlocks[i].setAlpha(40); // Subtle
-        backgroundBlockSpeeds[i] = 1 + (rand() % 3); // Speed 1, 2, or 3
+        backgroundBlockSpeeds[i] = 1 + getRandom(3); // Speed 1, 2, or 3
         // Insert after background but before logo/buttons
         insert(&background, backgroundBlocks[i]);
     }
@@ -127,10 +147,10 @@ void MainViewView::handleTickEvent()
         if (backgroundBlocks[i].getY() > 320)
         {
             // Reset to a random negative Y to create a "disappear and spawn new" effect
-            backgroundBlocks[i].setY(-(20 + (rand() % 150))); 
-            backgroundBlocks[i].setX(rand() % 228);
-            backgroundBlocks[i].setBitmap(touchgfx::Bitmap(blocks[rand() % 7]));
-            backgroundBlockSpeeds[i] = 1 + (rand() % 3); // Re-randomize speed too
+            backgroundBlocks[i].setY(-(20 + getRandom(150))); 
+            backgroundBlocks[i].setX(getRandom(228));
+            backgroundBlocks[i].setBitmap(touchgfx::Bitmap(blocks[getRandom(7)]));
+            backgroundBlockSpeeds[i] = 1 + getRandom(3); // Re-randomize speed too
         }
         backgroundBlocks[i].invalidate();
     }
