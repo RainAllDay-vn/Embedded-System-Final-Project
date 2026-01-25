@@ -143,43 +143,207 @@ The system features a 240x320 pixel color display, a dedicated audio engine for 
 \section{Hardware Design}
 
 \subsection{Development Board Specifications}
+The project utilizes the STM32F429I-DISCO kit, which is built around the STM32F429ZIT6 microcontroller. Key specifications utilized in this project include:
+\begin{itemize}
+    \item \textbf{Core:} ARM Cortex-M4 with FPU, running at 168 MHz (configured via PLL).
+    \item \textbf{Flash Memory:} 2 MB (Storing code and const assets like fonts/images).
+    \item \textbf{RAM:} 256 KB Internal SRAM + 64 Mbits External SDRAM (used for Frame Buffers).
+    \item \textbf{Display:} 2.4" QVGA TFT LCD via LTDC interface.
+\end{itemize}
+
+\imageplaceholder{6cm}{Photo of the STM32F429I-DISCO Board Setup}
 
 \subsection{Peripheral Configuration}
 
+The hardware configuration is generated using STM32CubeMX (inside STM32CubeIDE).
+
 \subsubsection{Display Subsystem (LTDC \& DMA2D)}
+The Liquid Crystal Display (LCD) is driven by the LTDC (LCD-TFT Display Controller) peripheral. 
+\begin{itemize}
+    \item \textbf{Interface:} RGB565 (16-bit color depth).
+    \item \textbf{Resolution:} 240 x 320 pixels.
+    \item \textbf{Memory:} Two frame buffers are allocated in the external SDRAM to support double buffering, preventing screen tearing.
+    \item \textbf{DMA2D:} Chrom-Art Accelerator is enabled to handle image copying and blending efficiently, offloading the CPU.
+\end{itemize}
 
 \subsubsection{Audio Subsystem (PWM)}
+Sound generation is achieved using Pulse Width Modulation (PWM) connected to a Piezo Buzzer.
+\begin{itemize}
+    \item \textbf{Timer:} TIM10.
+    \item \textbf{Channel:} Channel 1.
+    \item \textbf{Prescaler:} 167 (resulting in a 1 MHz timer clock).
+    \item \textbf{Logic:} The frequency of the PWM signal controls the musical pitch (Note), and the duty cycle controls the volume.
+\end{itemize}
 
 \subsubsection{Input Controls (GPIO \& EXTI)}
+The game is controlled via four external push buttons connected to GPIO pins configured as external interrupts (EXTI).
+
+\begin{table}[h]
+    \centering
+    \begin{tabularx}{0.8\textwidth}{|c|X|c|c|}
+        \hline
+        \textbf{Function} & \textbf{Pin} & \textbf{Port} & \textbf{Mode} \\
+        \hline
+        Rotate Piece & Pin 12 & GPIOB & EXTI Rising/Falling \\
+        \hline
+        Move Right & Pin 13 & GPIOB & EXTI Rising/Falling \\
+        \hline
+        Soft Drop & Pin 2 & GPIOG & EXTI Rising/Falling \\
+        \hline
+        Move Left & Pin 3 & GPIOG & EXTI Rising/Falling \\
+        \hline
+    \end{tabularx}
+    \caption{GPIO Pin Mapping for Game Controls}
+\end{table}
+
+\imageplaceholder{5cm}{Photo of the wiring between buttons and the board}
 
 \section{Software Design}
 
 \subsection{Software Architecture Overview}
+The software is layered to decouple hardware dependencies from game logic.
+\begin{itemize}
+    \item \textbf{Application Layer:} TouchGFX (C++) for UI, Game Model for logic.
+    \item \textbf{Middleware Layer:} FreeRTOS (Task scheduling, Queues), TouchGFX Engine.
+    \item \textbf{Driver Layer:} STM32 HAL (Hardware Abstraction Layer).
+\end{itemize}
+
+\imageplaceholder{8cm}{Software Architecture Diagram (Mermaid/UML)}
 
 \subsection{FreeRTOS Configuration}
+The system runs on FreeRTOS with CMSIS-OS V2 wrapper. Three primary tasks are defined:
+\begin{enumerate}
+    \item \textbf{GUI\_Task (High Priority):} Handles TouchGFX rendering and screen updates.
+    \item \textbf{DefaultTask (Normal Priority):} Monitors input queues and handles button debounce logic.
+    \item \textbf{SoundTask (Low Priority):} Consumes audio requests and drives the buzzer PWM.
+\end{enumerate}
 
 \subsection{Game Logic (The Model)}
+The core logic resides in `Model.cpp`. It maintains the state of the 10x20 Tetris grid.
 
 \subsubsection{Grid Representation}
+The grid is stored as a 2D array: `signed char grid[20][10]`.
+\begin{itemize}
+    \item Value `-1`: Empty cell.
+    \item Value `0-6`: Occupied by a specific Tetromino type (I, J, L, O, S, T, Z).
+\end{itemize}
 
 \subsubsection{Game Loop (`tick`)}
+The `tick()` function is called every frame (synchronized with VSYNC via TouchGFX). It handles:
+\begin{itemize}
+    \item Gravity: Moving the active piece down based on `dropSpeed`.
+    \item Input Processing: Reading commands ('L', 'R', 'U', 'D') from the `inputQueue`.
+    \item Collision Detection: Checking boundaries and existing blocks using `isCollision()`.
+    \item Line Clearing: Scanning the grid for full rows and shifting blocks down.
+\end{itemize}
+
+\begin{lstlisting}[language=C++]
+void Model::tick()
+{
+    if (isGameOver || isPaused) return;
+
+    tickCounter++;
+    if (tickCounter >= dropSpeed)
+    {
+        tickCounter = 0;
+        step(); // Gravity drop
+    }
+    
+#ifndef SIMULATOR
+    uint8_t key = 0;
+    while (osMessageQueueGet(inputQueueHandle, &key, NULL, 0) == osOK)
+    {
+        switch (key) {
+            case 'U': rotate(); break;
+            case 'R': moveRight(); break;
+            case 'D': step(); break;
+            case 'L': moveLeft(); break;
+            // ...
+        }
+    }
+#endif
+}
+\end{lstlisting}
 
 \subsection{Audio Engine Implementation}
+To prevent audio processing from blocking the UI, a Producer-Consumer pattern is used.
+\begin{itemize}
+    \item Producer: The Game Model sends a `TrackID` to a FreeRTOS Message Queue.
+    \item Consumer: The `SoundEngineTask` wakes up when a message arrives, switches the active melody pointer, and plays notes by updating the TIM10 PWM frequency.
+\end{itemize}
+
+\begin{lstlisting}[language=C]
+// From SoundEngine.c
+void SoundEngineTask(void *argument)
+{
+    // ...
+    for(;;)
+    {
+        // Wait for request
+        if (osMessageQueueGet(soundQueueHandle, &currentRequest, NULL, waitTime) == osOK)
+        {
+            // Switch Melody
+            currentMelody = (currentRequest == TRACK_MENU) ? melody_menu : ...;
+        }
+        
+        if (currentMelody != NULL)
+        {
+            // Play current note
+            SetFrequency(currentMelody[noteIndex].frequency);
+            osDelay(currentMelody[noteIndex].duration);
+            noteIndex++;
+        }
+    }
+}
+\end{lstlisting}
 
 \subsection{User Interface Design}
+The UI is designed with a "Modern Retro" aesthetic using pixel art assets.
 
 \subsubsection{Main Menu}
+Displays the "Tetris Art" logo and options to start the game. The background plays a slower, ambient menu theme.
+
+\imageplaceholder{7cm}{Screenshot of the Main Menu Screen}
 
 \subsubsection{Game Screen}
+The layout is optimized for the 240x320 portrait screen:
+\begin{itemize}
+    \item Center: 10x20 Game Matrix.
+    \item Left Sidebar: HOLD piece and Level indicator.
+    \item Right Sidebar: NEXT piece preview and Score.
+\end{itemize}
+
+\imageplaceholder{7cm}{Screenshot of the Gameplay Screen showing a Tetromino}
+
+\section{System Integration \& Challenges}
 
 \subsection{Input Debouncing}
+Directly reading GPIO pins caused erratic behavior due to mechanical switch bounce. We implemented software debouncing using FreeRTOS Timers.
+\begin{itemize}
+    \item When a button press interrupt occurs, a timer starts (e.g., 50ms).
+    \item The input is only registered if the signal remains stable until the timer callback executes.
+\end{itemize}
 
 \subsection{Memory Management}
+Storing full-screen bitmaps in internal RAM (256KB) is impossible. We utilized the external 64Mbit SDRAM mapped via FMC to store the TouchGFX frame buffers (approx 150KB per buffer). Smaller assets like font glyphs and Tetromino icons are stored in the internal Flash.
 
 \section{Results and Conclusion}
 
 \subsection{Project Outcomes}
+The project successfully delivers a playable Tetris clone on the STM32F429I-DISCO.
+\begin{itemize}
+    \item Performance: The game runs at a stable 60 FPS.
+    \item Audio: Background music plays smoothly without interrupting game logic.
+    \item Gameplay: All standard Tetris rules (rotation, wall kicks, line clears, leveling) are implemented.
+\end{itemize}
+
+\imageplaceholder{8cm}{Photo of the final working system}
 
 \subsection{Future Improvements}
+\begin{itemize}
+    \item Implement "Ghost Piece" visualization (indicated in design but currently simplified).
+    \item Save high scores to internal Flash memory to persist after power loss.
+    \item Add support for using the on-board Gyroscope (SPI5) for experimental tilt controls.
+\end{itemize}
 
 \end{document}
