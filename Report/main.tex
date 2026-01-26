@@ -51,6 +51,8 @@
 \usepackage{longtable} % Cho bảng dài qua trang
 \usepackage{array}
 \usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
 
 % TÙY CHỈNH TIÊU ĐỀ SECTION
 \titleformat{\section}
@@ -376,55 +378,170 @@
 		\caption{Screenshot of GameView with Active Gameplay}
 	\end{figure}
 	
-	\subsection{The Presenter: Logic-UI Synchronization}
-	The Presenter layer serves as the bridge between the View and the Model. It listens for notifications from the Model (via `ModelListener`) and triggers updates in the View, ensuring the visual layer stays perfectly synchronized with the logical state. This project utilizes two distinct presenters corresponding to the two main screens.
+	\subsection{The Presenter: Logic-UI Sychnorization}
 	
-	\subsubsection{MainViewPresenter}
-	The `MainViewPresenter` manages the logic for the Main Menu screen. Its responsibilities are streamlined to focus on navigation and data retrieval for the menu interface:
+	The Presenter acts as the "middleman" in the MVP architecture, bridging the gap between the Game Model and the View. It ensures that the Model remains completely unaware of the UI implementation details, while the View remains passive and data-driven.
+	
+	\textbf{Responsibilities:}
 	\begin{itemize}
-		\item **Navigation:** Handles the transition event when the user selects "Start Game", requesting the application to switch to the Game Screen.
-		\item **Data Retrieval:** Fetches stored high scores from the Model (`getHighScores`) to display the leaderboard on the menu, enticing the player to beat the top records.
+		\item \textbf{Data Formatting:} The Presenter retrieves raw data from the Model (e.g., integer scores) and formats it into structures the View can easily consume (e.g., sorted leaderboards).
+		\item \textbf{Event Handling:} It listens for UI events (like button clicks) and forwards actionable commands to the Model.
+		\item \textbf{State Synchronization:} Implementing the `ModelListener` interface, it receives notifications when the game state changes (e.g., board updates, game over) and instructs the View to repaint.
 	\end{itemize}
 	
-	\subsubsection{GameViewPresenter}
-	The `GameViewPresenter` is the core mediator for the active gameplay session. It handles a high frequency of events and data flow:
-	\begin{itemize}
-		\item **Input Proxying:** It receives user input events from the View (e.g., button presses for left, right, rotate) and forwards them to the Model via methods like `handleLeft()` or `handleRotate()`.
-		\item **State Synchronization:** It implements the `modelStateChanged()` method. When the game tick updates the Model (gravity, collisions), this method is called to trigger `view.updateBoard()`, ensuring the screen redraws at 60 FPS.
-		\item **Scoreboard Logic:** It implements complex logic for the Game Over screen. The `getScoreboard()` method retrieves the top 3 high scores, mixes in the current player's score, and sorts them dynamically. This allows the player to see their rank immediately upon finishing a game (`ScoreInfo` structure).
-	\end{itemize}
+	\textbf{Code Implementation:}
+	A key example of the Presenter's logic is the `getScoreboard` method in `GameViewPresenter`. It combines the persistent high scores from the Model with the current session's score and sorts them to display a dynamic ranking on the "Game Over" screen.
 	
-	\begin{lstlisting}[language=C++]
-		// Example: Synchronization in GameViewPresenter.cpp
-		void GameViewPresenter::modelStateChanged()
+	\begin{lstlisting}[language=C++, caption={Scoreboard Sorting Logic in Presenter}]
+		// Source: TouchGFX/gui/src/gameview_screen/GameViewPresenter.cpp
+		
+		void GameViewPresenter::getScoreboard(ScoreInfo* buffer)
 		{
-			view.updateBoard(); // Signal the View to redraw based on new Model data
+			// 1. Retrieve raw data from Model
+			int highScores[3];
+			model->getHighScores(highScores);
+			int currentScore = model->getScore();
+			
+			// 2. Populate buffer
+			for(int i=0; i<3; i++) {
+				buffer[i].score = highScores[i];
+				buffer[i].isCurrent = false;
+			}
+			buffer[3].score = currentScore;
+			buffer[3].isCurrent = true;
+			
+			// 3. Sort Descending (Bubble Sort for small dataset)
+			for(int i=0; i<3; i++)
+			{
+				for(int j=0; j<3-i; j++)
+				{
+					if (buffer[j].score < buffer[j+1].score)
+					{
+						ScoreInfo temp = buffer[j];
+						buffer[j] = buffer[j+1];
+						buffer[j+1] = temp;
+					}
+				}
+			}
 		}
 	\end{lstlisting}
 	
 	\subsection{The Model: Game Logic}
-	The Model layer maintains the internal state of the Tetris grid and implements the rules of the game. It is independent of the GUI framework, allowing for easier testing and logic updates.
+	
+	The Model class encapsulates the entire state of the Tetris game. It operates independently of the View and Presenter, ensuring that the game rules (gravity, collisions, scoring) are consistent regardless of how they are displayed.
 	
 	\subsubsection{Grid Representation}
-	The 10x20 game board is represented as a 2D array: `signed char grid[20][10]`, where each cell stores a value corresponding to a Tetromino type or remains -1 if empty.
+	The game field is represented by a 2D array, `grid[20][10]`. Each cell stores a value representing the type of Tetromino occupying it, or `-1` if the cell is empty. This simple data structure allows for efficient collision detection and line-clearing operations.
 	
-	\subsubsection{Game Loop (`tick`)}
-	The `tick()` function is the entry point for game updates, called every frame (60Hz). It handles gravity, collision detection via `isCollision()`, and line clearing logic.
+	\subsubsection{The Game Loop (Tick)}
+	The `tick()` function is the heartbeat of the game. It is called periodically (based on the game speed) to advance the game state. Its primary responsibilities are:
+	\begin{itemize}
+		\item Gravity: Moving the current piece down one row.
+		\item Input Processing: Consuming user commands (Left, Right, Rotate, Drop) from the `inputQueue`.
+		\item Collision Checks: verifying if the piece has landed or hit a wall.
+	\end{itemize}
 	
-	\begin{lstlisting}[language=C++]
+	\begin{lstlisting}[language=C++, caption={Game Loop Logic in Model::tick}]
+		// Source: TouchGFX/gui/src/model/Model.cpp
+		
 		void Model::tick()
 		{
 			if (isGameOver || isPaused) return;
 			
+			// 1. Handle Gravity
 			tickCounter++;
 			if (tickCounter >= dropSpeed)
 			{
 				tickCounter = 0;
-				step(); // Gravity drop
+				step(); // Try to move piece down
 			}
-			// ... Input queue processing ...
+			
+			// 2. Process Input Queue from FreeRTOS
+			#ifndef SIMULATOR
+			uint8_t key = 0;
+			while (osMessageQueueGet(inputQueueHandle, &key, NULL, 0) == osOK)
+			{
+				switch (key)
+				{
+					case 'U': rotate(); break;
+					case 'R': moveRight(); break;
+					case 'D': step(); break;
+					case 'L': moveLeft(); break;
+					case 'H': hardDrop(); break;
+					case 'S': holdPiece(); break;
+				}
+			}
+			#endif
+			
+			// 3. Notify Presenter of changes
+			if (modelListener != 0)
+			{
+				modelListener->modelStateChanged();
+			}
 		}
 	\end{lstlisting}
+	
+	\subsubsection{Collision Detection \& Mechanics}
+	To prevent pieces from moving through walls or other blocks, the `isCollision` method checks the target coordinates of every block in the active Tetromino against the grid boundaries and existing occupied cells.
+	
+	When a piece lands (collision detected on `step()`), the `lockPiece()` method transfers the active piece into the static `grid` array and immediately triggers `checkLines()`.
+	
+	\subsubsection{Line Clearing Algorithm}
+	The `checkLines()` method scans the grid from bottom to top. If a row is fully occupied (no `-1` values), it is cleared, and all rows above it are shifted down. This method also calculates the score based on the number of lines cleared simultaneously (100, 300, 500, or 800 points).
+	
+	\begin{lstlisting}[language=C++, caption={Line Clearing Logic}]
+		// Source: TouchGFX/gui/src/model/Model.cpp
+		
+		void Model::checkLines()
+		{
+			int clearedInThisStep = 0;
+			
+			for (int y = 19; y >= 0; y--)
+			{
+				bool isFull = true;
+				for (int x = 0; x < 10; x++)
+				{
+					if (grid[y][x] == -1) // -1 means empty
+					{
+						isFull = false;
+						break;
+					}
+				}
+				
+				if (isFull)
+				{
+					clearedInThisStep++;
+					// Shift everything above down
+					for (int shiftY = y; shiftY > 0; shiftY--)
+					{
+						for (int x = 0; x < 10; x++)
+						{
+							grid[shiftY][x] = grid[shiftY - 1][x];
+						}
+					}
+					// Clear top line
+					for (int x = 0; x < 10; x++) grid[0][x] = -1;
+					
+					// Re-check this same Y index since it now contains new data
+					y++;
+				}
+			}
+			
+			// Update Score and Level
+			if (clearedInThisStep > 0)
+			{
+				int points[] = {0, 100, 300, 500, 800};
+				score += points[clearedInThisStep] * level;
+			}
+		}
+	\end{lstlisting}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[scale=0.08]{images/flowchart.png}
+		\caption{Flowchart of the Game Logic (Tick Execution)}
+	\end{figure}
+	
 	
 	\subsection{System Integration (RTOS \& Audio)}
 	The application logic sits atop a real-time foundation that manages hardware resources and asynchronous background tasks.
