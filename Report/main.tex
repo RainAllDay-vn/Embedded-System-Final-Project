@@ -241,6 +241,32 @@ The layout is optimized for the portrait screen, dividing the interface into fun
     \item Right Sidebar: NEXT piece preview and Score display.
 \end{itemize}
 
+\subsection{The Presenter: Logic-UI Synchronization}
+The Presenter layer serves as the bridge between the View and the Model. It listens for notifications from the Model (via `ModelListener`) and triggers updates in the View, ensuring the visual layer stays perfectly synchronized with the logical state. This project utilizes two distinct presenters corresponding to the two main screens.
+
+\subsubsection{MainViewPresenter}
+The `MainViewPresenter` manages the logic for the Main Menu screen. Its responsibilities are streamlined to focus on navigation and data retrieval for the menu interface:
+\begin{itemize}
+    \item **Navigation:** Handles the transition event when the user selects "Start Game", requesting the application to switch to the Game Screen.
+    \item **Data Retrieval:** Fetches stored high scores from the Model (`getHighScores`) to display the leaderboard on the menu, enticing the player to beat the top records.
+\end{itemize}
+
+\subsubsection{GameViewPresenter}
+The `GameViewPresenter` is the core mediator for the active gameplay session. It handles a high frequency of events and data flow:
+\begin{itemize}
+    \item **Input Proxying:** It receives user input events from the View (e.g., button presses for left, right, rotate) and forwards them to the Model via methods like `handleLeft()` or `handleRotate()`.
+    \item **State Synchronization:** It implements the `modelStateChanged()` method. When the game tick updates the Model (gravity, collisions), this method is called to trigger `view.updateBoard()`, ensuring the screen redraws at 60 FPS.
+    \item **Scoreboard Logic:** It implements complex logic for the Game Over screen. The `getScoreboard()` method retrieves the top 3 high scores, mixes in the current player's score, and sorts them dynamically. This allows the player to see their rank immediately upon finishing a game (`ScoreInfo` structure).
+\end{itemize}
+
+\begin{lstlisting}[language=C++]
+// Example: Synchronization in GameViewPresenter.cpp
+void GameViewPresenter::modelStateChanged()
+{
+    view.updateBoard(); // Signal the View to redraw based on new Model data
+}
+\end{lstlisting}
+
 \subsection{The Model: Game Logic}
 The Model layer maintains the internal state of the Tetris grid and implements the rules of the game. It is independent of the GUI framework, allowing for easier testing and logic updates.
 
@@ -262,19 +288,6 @@ void Model::tick()
         step(); // Gravity drop
     }
     // ... Input queue processing ...
-}
-\end{lstlisting}
-
-\subsection{The Presenter: Logic-UI Synchronization}
-The Presenter layer serves as the bridge. Classes like `GameViewPresenter` listen for notifications from the Model (via `ModelListener`) and trigger updates in the View.
-
-When the Model state changes (e.g., a piece moves), the Presenter is notified and calls the corresponding View methods to refresh the display, ensuring the visual layer stays perfectly synchronized with the logical state. 
-
-\begin{lstlisting}[language=C++]
-// Example from GameViewPresenter.cpp
-void GameViewPresenter::modelStateChanged()
-{
-    view.updateBoard(); // Signal the View to redraw based on new Model data
 }
 \end{lstlisting}
 
