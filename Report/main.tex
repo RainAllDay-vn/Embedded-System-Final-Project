@@ -137,9 +137,30 @@
 
 \section{Introduction}
 
-This project aims to replicate the classic arcade game "Tetris" on an embedded system platform. The primary goal is to demonstrate the integration of real-time operating systems (FreeRTOS), graphical user interfaces (TouchGFX), and hardware peripheral control (GPIO, Timers, Interrupts) on the STM32F429I-DISCO development board.
+The "Embedded Tetris" project aims to replicate the classic arcade experience on the STM32F429I-DISCO development board. By leveraging the high-performance ARM Cortex-M4 microcontroller, this project demonstrates the capability of modern embedded systems to handle real-time game logic, fluid graphical rendering, and multi-tasking.
 
-The system features a 240x320 pixel color display, a dedicated audio engine for background music and sound effects using PWM, and physical button controls for game interaction. The software architecture is designed using the Model-View-Presenter (MVP) pattern provided by TouchGFX, ensuring a clean separation between game logic and visual rendering.
+\subsection{Project Goals}
+The primary objectives of this project are:
+\begin{itemize}
+    \item \textbf{System Integration:} To successfully integrate FreeRTOS with the TouchGFX framework, creating a responsive and stable application environment where the GUI task and background logic run concurrently.
+    \item \textbf{Game Fidelity:} To implement the full functionality of the classic Tetris game, including:
+    \begin{itemize}
+        \item \textbf{Tetromino Logic:} Spawning of all seven standard Tetromino types (I, J, L, O, S, T, Z) with randomized generation.
+        \item \textbf{Movement and Rotation:} Precise control for horizontal movement, soft dropping, and piece rotation with collision detection.
+        \item \textbf{Matrix Management:} A 10x20 grid system for tracking settled pieces, performing line detection, and implementing line clearing.
+        \item \textbf{Scoring and Progression:} A scoring system based on line clears and a leveling system that increases game speed to provide progressive difficulty.
+        \item \textbf{User Experience:} Integration of a "Hold" piece mechanism, "Next" piece preview, and high score tracking for a complete gameplay experience.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Project Scope}
+This project is confined to the following boundaries:
+\begin{itemize}
+    \item \textbf{Hardware:} Strictly targeted for the STM32F429I-DISCO kit (STM32F429ZIT6 MCU).
+    \item \textbf{Input:} Control is limited to the on-board user button and external push buttons (via GPIO), or the capacitive touch screen.
+    \item \textbf{Output:} Visual elements are rendered on the built-in 2.4" QVGA display, and audio is output via a piezo buzzer connected to a PWM pin.
+    \item \textbf{Software:} The codebase is built using STM32CubeIDE, utilising the HAL library for hardware abstraction and FreeRTOS for task scheduling.
+\end{itemize}
 
 \section{Hardware Design}
 
