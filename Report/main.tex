@@ -27,14 +27,14 @@
 	stringstyle=\color{codepurple},
 	basicstyle=\ttfamily\footnotesize,
 	breakatwhitespace=false,         
-	breaklines=true,                  
+	breaklines=true,                   
 	captionpos=b,                     
-	keepspaces=true,                  
+	keepspaces=true,                   
 	numbers=left,                     
-	numbersep=5pt,                  
+	numbersep=5pt,                   
 	showspaces=false,                
 	showstringspaces=false,
-	showtabs=false,                  
+	showtabs=false,                   
 	tabsize=2
 }
 \lstset{style=mystyle}
@@ -389,104 +389,89 @@
 		\item \textbf{State Synchronization:} Implementing the `ModelListener` interface, it receives notifications when the game state changes (e.g., board updates, game over) and instructs the View to repaint.
 	\end{itemize}
 	
-	\textbf{Code Implementation:}
-	A key example of the Presenter's logic is the `getScoreboard` method in `GameViewPresenter`. It combines the persistent high scores from the Model with the current session's score and sorts them to display a dynamic ranking on the "Game Over" screen.
-	
-	\begin{lstlisting}[language=C++, caption={Scoreboard Sorting Logic in Presenter}]
-		// Source: TouchGFX/gui/src/gameview_screen/GameViewPresenter.cpp
-		
-		void GameViewPresenter::getScoreboard(ScoreInfo* buffer)
-		{
-			// 1. Retrieve raw data from Model
-			int highScores[3];
-			model->getHighScores(highScores);
-			int currentScore = model->getScore();
-			
-			// 2. Populate buffer
-			for(int i=0; i<3; i++) {
-				buffer[i].score = highScores[i];
-				buffer[i].isCurrent = false;
-			}
-			buffer[3].score = currentScore;
-			buffer[3].isCurrent = true;
-			
-			// 3. Sort Descending (Bubble Sort for small dataset)
-			for(int i=0; i<3; i++)
-			{
-				for(int j=0; j<3-i; j++)
-				{
-					if (buffer[j].score < buffer[j+1].score)
-					{
-						ScoreInfo temp = buffer[j];
-						buffer[j] = buffer[j+1];
-						buffer[j+1] = temp;
-					}
-				}
-			}
-		}
-	\end{lstlisting}
-	
 	\subsection{The Model: Game Logic}
 	
-	The Model class encapsulates the entire state of the Tetris game. It operates independently of the View and Presenter, ensuring that the game rules (gravity, collisions, scoring) are consistent regardless of how they are displayed.
-	
-	\subsubsection{Grid Representation}
-	The game field is represented by a 2D array, `grid[20][10]`. Each cell stores a value representing the type of Tetromino occupying it, or `-1` if the cell is empty. This simple data structure allows for efficient collision detection and line-clearing operations.
+	The Model class encapsulates the entire state of the Tetris game, operating independently of the View and Presenter. This ensures that the game rules—including gravity, collisions, and scoring—remain consistent regardless of the visual representation. At its core, the game field is represented by a 2D array, \texttt{grid[20][10]}, where each cell stores a value corresponding to the type of Tetromino occupying it, or \texttt{-1} if the cell is empty.
 	
 	\subsubsection{The Game Loop (Tick)}
-	The `tick()` function is the heartbeat of the game. It is called periodically (based on the game speed) to advance the game state. Its primary responsibilities are:
+	
+	The \texttt{tick()} function serves as the "heartbeat" of the game. It is triggered periodically by the TouchGFX framework based on the current game speed. This loop manages the progression of the game through several key phases:
+	
 	\begin{itemize}
-		\item Gravity: Moving the current piece down one row.
-		\item Input Processing: Consuming user commands (Left, Right, Rotate, Drop) from the `inputQueue`.
-		\item Collision Checks: verifying if the piece has landed or hit a wall.
+	    \item \textbf{Gravity:} The system tracks time using a \texttt{tickCounter}. When it reaches the \texttt{dropSpeed} threshold, the current piece is moved down one row.
+	    \item \textbf{Collision Detection:} Before any movement or rotation, the \texttt{isCollision()} method checks the proposed coordinates against the grid boundaries and existing blocks.
+	    \item \textbf{Landing and Locking:} If a downward move results in a collision, the piece is "locked" into the static grid, and a new piece is spawned.
+	    \item \textbf{Line Clearing:} Immediately after locking a piece, the system scans the grid. If a row is full, it is cleared, and blocks above it are shifted down.
 	\end{itemize}
 	
-	\begin{lstlisting}[language=C++, caption={Game Loop Logic in Model::tick}]
-		// Source: TouchGFX/gui/src/model/Model.cpp
-		
-		void Model::tick()
-		{
-			if (isGameOver || isPaused) return;
-			
-			// 1. Handle Gravity
-			tickCounter++;
-			if (tickCounter >= dropSpeed)
-			{
-				tickCounter = 0;
-				step(); // Try to move piece down
-			}
-			
-			// 2. Process Input Queue from FreeRTOS
-			#ifndef SIMULATOR
-			uint8_t key = 0;
-			while (osMessageQueueGet(inputQueueHandle, &key, NULL, 0) == osOK)
-			{
-				switch (key)
-				{
-					case 'U': rotate(); break;
-					case 'R': moveRight(); break;
-					case 'D': step(); break;
-					case 'L': moveLeft(); break;
-					case 'H': hardDrop(); break;
-					case 'S': holdPiece(); break;
-				}
-			}
-			#endif
-			
-			// 3. Notify Presenter of changes
-			if (modelListener != 0)
-			{
-				modelListener->modelStateChanged();
-			}
-		}
+	\begin{lstlisting}[language=C++, caption={Game Loop Core Logic (Simplified)}]
+	void Model::tick()
+	{
+	    if (isGameOver || isPaused) return;
+
+	    // 1. Gravity Logic
+	    tickCounter++;
+	    if (tickCounter >= dropSpeed)
+	    {
+	        tickCounter = 0;
+	        step(); // Attempt to move piece down
+	    }
+	    
+	    // ... Input Processing (See Section 3.4.2) ...
+	    
+	    // 2. Notify UI of changes
+	    if (modelListener != 0)
+	    {
+	        modelListener->modelStateChanged();
+	    }
+	}
+	\end{lstlisting}
+	
+	\subsubsection{Input Processing}
+	
+	User interaction is handled asynchronously to ensure responsiveness. Inputs generated via GPIO interrupts (buttons) or the Touch interface are converted into commands and sent to the Model through a FreeRTOS message queue (\texttt{inputQueueHandle}).
+	
+	During each execution of the \texttt{tick()} function, the Model drains this queue and executes the corresponding operations:
+	
+	\begin{itemize}
+	    \item \textbf{Queue Integration:} The code uses \texttt{osMessageQueueGet} to retrieve pending commands without blocking the GUI task.
+	    \item \textbf{Command Flow:}
+	    \begin{itemize}
+	        \item \texttt{'U'}: Rotate the piece.
+	        \item \texttt{'L' / 'R'}: Move the piece left or right.
+	        \item \texttt{'D'}: Soft Drop (one step down).
+	        \item \texttt{'H'}: Hard Drop (snap to bottom).
+	        \item \texttt{'S'}: Hold the current piece.
+	    \end{itemize}
+	\end{itemize}
+	
+	\begin{lstlisting}[language=C++, caption={Input Processing Logic in Model}]
+	// Processing Input Queue from FreeRTOS
+	#ifndef SIMULATOR
+	uint8_t key = 0;
+	while (osMessageQueueGet(inputQueueHandle, &key, NULL, 0) == osOK)
+	{
+	    switch (key)
+	    {
+	        case 'U': rotate(); break;
+	        case 'R': moveRight(); break;
+	        case 'D': step(); break;
+	        case 'L': moveLeft(); break;
+	        case 'H': hardDrop(); break;
+	        case 'S': holdPiece(); break;
+	    }
+	}
+	#endif
 	\end{lstlisting}
 	
 	\subsubsection{Collision Detection \& Mechanics}
+	
 	To prevent pieces from moving through walls or other blocks, the `isCollision` method checks the target coordinates of every block in the active Tetromino against the grid boundaries and existing occupied cells.
 	
 	When a piece lands (collision detected on `step()`), the `lockPiece()` method transfers the active piece into the static `grid` array and immediately triggers `checkLines()`.
 	
 	\subsubsection{Line Clearing Algorithm}
+	
 	The `checkLines()` method scans the grid from bottom to top. If a row is fully occupied (no `-1` values), it is cleared, and all rows above it are shifted down. This method also calculates the score based on the number of lines cleared simultaneously (100, 300, 500, or 800 points).
 	
 	\begin{lstlisting}[language=C++, caption={Line Clearing Logic}]
