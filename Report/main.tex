@@ -529,18 +529,98 @@
 	
 	
 	\subsection{System Integration (RTOS \& Audio)}
-	The application logic sits atop a real-time foundation that manages hardware resources and asynchronous background tasks.
+	The application logic rests upon a robust real-time foundation powered by FreeRTOS. This architecture ensures deterministic behavior by managing hardware resources and asynchronous background tasks effectively, allowing the STM32F429 to handle graphics rendering and audio synthesis concurrently without blocking.
 	
 	\subsubsection{FreeRTOS Task Management}
-	Three primary tasks ensure smooth operation:
+	To ensure smooth operation and responsiveness, the system is divided into three primary tasks. The scheduling policy is preemptive, ensuring that time-critical operations (like UI updates) take precedence over background activities.
+	
+	The task allocation is detailed in Table \ref{tab:rtos_tasks}:
+	
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{|l|l|l|l|}
+			\hline
+			\textbf{Task Name} & \textbf{Priority} & \textbf{Stack Size} & \textbf{Functionality} \\ \hline
+			\texttt{GUI\_Task} & Normal & 8192 words & Executes TouchGFX engine and MVP logic. \\ \hline
+			\texttt{DefaultTask} & Normal & 128 words & Handles physical button polling (debouncing). \\ \hline
+			\texttt{SoundTask} & Low & 256 words & Processes background music and SFX. \\ \hline
+		\end{tabular}
+		\caption{FreeRTOS Task Configuration}
+		\label{tab:rtos_tasks}
+	\end{table}
+	
 	\begin{itemize}
-		\item \textbf{GUI\_Task:} Executes the TouchGFX engine and MVP logic (High Priority).
-		\item \textbf{DefaultTask:} Handles button debouncing and system monitoring.
-		\item \textbf{SoundTask:} Processes audio requests in the background (Low Priority).
+		\item \textbf{GUI\_Task:} Being the heaviest consumer of CPU cycles, this task drives the display updates. It integrates with the TouchGFX framework to render the Tetris grid and animations.
+		\item \textbf{SoundTask:} Configured with \textit{Low Priority} to prevent audio processing from stuttering the graphical interface. It utilizes `osDelay` to manage note duration, yielding CPU time back to the scheduler during silence or sustained notes.
 	\end{itemize}
 	
-	\subsubsection{Audio Engine}
-	To maintain performance, audio is handled via a Producer-Consumer pattern. The Game Model (Producer) sends `TrackID` requests to a queue, which are processed by the `SoundTask` (Consumer) to drive the PWM-based buzzer.
+	\subsubsection{Audio Engine Implementation}
+	The audio subsystem is implemented using the STM32's hardware timer (TIM10) in Pulse Width Modulation (PWM) mode. The system generates sound by manipulating the frequency of the square wave output on pin \textbf{PF6}.
+	
+	\textbf{Frequency Calculation:}
+	The Timer is clocked at $1\text{MHz}$ ($1\mu s$ per tick). To generate a specific musical note frequency ($f_{note}$), the Auto-Reload Register (ARR) is dynamically updated using the formula:
+	\begin{equation}
+		\text{ARR} = \frac{f_{timer}}{f_{note}} - 1 = \frac{1,000,000}{f_{note}} - 1
+	\end{equation}
+	To maintain a consistent volume, the Pulse width (CCR) is always set to 50\% of the ARR ($CCR = ARR / 2$).
+	
+	\subsubsection{Source Code Implementation}
+	The implementation consists of a low-level driver for frequency generation and a high-level RTOS task for sequencing the melody (e.g., Mario Theme).
+	
+	\textbf{1. Low-Level PWM Driver:}
+	This function directly manipulates the hardware timer registers to change the pitch.
+	
+	\begin{lstlisting}[language=C, caption=Buzzer Frequency Control Function, label=lst:buzzer_ctrl]
+		/* Sets the PWM frequency for the passive buzzer */
+		void Buzzer_SetFrequency(uint32_t freq)
+		{
+			if (freq == 0) {
+				// Stop PWM generation for silence/rests
+				__HAL_TIM_SET_COMPARE(&htim10, TIM_CHANNEL_1, 0);
+				return;
+			}
+			
+			// Calculate period based on 1MHz Timer Clock
+			uint32_t period = (1000000 / freq) - 1;
+			
+			// Update Auto-Reload Register (Frequency)
+			__HAL_TIM_SET_AUTORELOAD(&htim10, period);
+			
+			// Update Capture Compare Register (50% Duty Cycle)
+			__HAL_TIM_SET_COMPARE(&htim10, TIM_CHANNEL_1, period / 2);
+		}
+	\end{lstlisting}
+	
+	\textbf{2. RTOS Music Task:}
+	The \texttt{SoundTask} iterates through predefined arrays of notes and durations. It uses `osDelay` to maintain precise timing without blocking the CPU.
+	
+	\begin{lstlisting}[language=C, caption=RTOS Task for Background Music, label=lst:sound_task]
+		void SoundEngineTask(void *argument)
+		{
+			// Ensure PWM is started on Channel 1
+			HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+			
+			uint32_t i = 0;
+			// Calculate total notes in the melody
+			const uint32_t len = sizeof(mario_notes)/sizeof(mario_notes[0]);
+			
+			for (;;) // Infinite Loop
+			{
+				if (mario_notes[i] == 0) {
+					Buzzer_Stop(); // Handle Rests
+				} else {
+					Buzzer_SetFrequency(mario_notes[i]); // Play Note
+				}
+				
+				// Non-blocking delay for note duration
+				osDelay(mario_durations[i]);
+				
+				// Loop the melody
+				i++;
+				if (i >= len) i = 0;
+			}
+		}
+	\end{lstlisting}
 	
 	\section{System Integration \& Challenges}
 	
