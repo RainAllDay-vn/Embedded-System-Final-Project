@@ -378,7 +378,7 @@
 		\caption{Screenshot of GameView with Active Gameplay}
 	\end{figure}
 	
-	\subsection{The Presenter: Logic-UI Sychnorization}
+	\subsection{The Presenter: UI-Model Sychnorization}
 	
 	The Presenter acts as the "middleman" in the MVP architecture, bridging the gap between the Game Model and the View. It ensures that the Model remains completely unaware of the UI implementation details, while the View remains passive and data-driven.
 	
@@ -388,6 +388,43 @@
 		\item \textbf{Event Handling:} It listens for UI events (like button clicks) and forwards actionable commands to the Model.
 		\item \textbf{State Synchronization:} Implementing the `ModelListener` interface, it receives notifications when the game state changes (e.g., board updates, game over) and instructs the View to repaint.
 	\end{itemize}
+	
+	\textbf{Code Implementation:}
+	A key example of the Presenter's logic is the `getScoreboard` method in `GameViewPresenter`. It combines the persistent high scores from the Model with the current session's score and sorts them to display a dynamic ranking on the "Game Over" screen.
+	
+	\begin{lstlisting}[language=C++, caption={Scoreboard Sorting Logic in Presenter}]
+		// Source: TouchGFX/gui/src/gameview_screen/GameViewPresenter.cpp
+		
+		void GameViewPresenter::getScoreboard(ScoreInfo* buffer)
+		{
+			// 1. Retrieve raw data from Model
+			int highScores[3];
+			model->getHighScores(highScores);
+			int currentScore = model->getScore();
+			
+			// 2. Populate buffer
+			for(int i=0; i<3; i++) {
+				buffer[i].score = highScores[i];
+				buffer[i].isCurrent = false;
+			}
+			buffer[3].score = currentScore;
+			buffer[3].isCurrent = true;
+			
+			// 3. Sort Descending (Bubble Sort for small dataset)
+			for(int i=0; i<3; i++)
+			{
+				for(int j=0; j<3-i; j++)
+				{
+					if (buffer[j].score < buffer[j+1].score)
+					{
+						ScoreInfo temp = buffer[j];
+						buffer[j] = buffer[j+1];
+						buffer[j+1] = temp;
+					}
+				}
+			}
+		}
+	\end{lstlisting}
 	
 	\subsection{The Model: Game Logic}
 	
