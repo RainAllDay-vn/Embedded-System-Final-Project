@@ -676,13 +676,65 @@
 		\item \textbf{VCO Calculation:} $(8\text{ MHz} / 8) \times 336 = 336\text{ MHz}$.
 		\item \textbf{Resulting Clocks:} SysClk = $336\text{ MHz} / 2 = 168\text{ MHz}$; RNG Clock = $336\text{ MHz} / 7 = 48\text{ MHz}$ (Exact).
 	\end{itemize}
+
+	\subsection{BSP Driver Integration}
+	
+	A significant workflow challenge encountered was the manual integration of Board Support Package (BSP) drivers for the STM32F429I-DISCO's SDRAM and LCD.
+	
+	\begin{itemize}
+		\item \textbf{Problem:} The STM32CubeMX code generator does not automatically include specific BSP drivers (e.g., \lstinline|stm32f429i_discovery_sdram.c|) required to initialize the external memory, even when the interface is enabled in the GUI. The generated code initializes the FMC peripheral but leaves the specific SDRAM startup sequence (Clock Enable, PALL, Refresh Rate) unimplemented.
+		\item \textbf{Solution:} We had to manually copy the necessary BSP files into the project structure and modify the build paths.
+	\end{itemize}
 	
 	\subsection{Input Debouncing}
-	Directly reading GPIO pins caused erratic behavior due to mechanical switch bounce. We implemented software debouncing using FreeRTOS Timers.
-	\begin{itemize}
-		\item When a button press interrupt occurs, a timer starts (e.g., 50ms).
-		\item The input is only registered if the signal remains stable until the timer callback executes.
-	\end{itemize}
+	Directly reading GPIO pins caused erratic behavior due to mechanical switch bounce ("chattering").
+	
+	To mitigate this, we implemented a software debouncing strategy using FreeRTOS Timers and Interrupts:
+	\begin{enumerate}
+		\item \textbf{Interrupt Trigger:} When a button press (rising/falling edge) is detected, the \lstinline|HAL_GPIO_EXTI_Callback| function is triggered.
+		\item \textbf{Timestamp Check:} To prevent multiple immediate triggers, we check if sufficient time (e.g., 50ms) has passed since the last interrupt (\lstinline|current_time - last_irq_time_up > 50|).
+		\item \textbf{Timer Start:} If valid, we start a FreeRTOS One-Shot Timer (\lstinline|timerUpHandle|) with a 500ms delay. This acts as a confirmation period.
+		\item \textbf{Timer Callback (Confirmation):} When the timer expires, the \lstinline|CallbackTimerUp| function executes. It confirms the input is deliberate and pushes the action command to the \lstinline|inputQueue|.
+	\end{enumerate}
+	
+	\begin{lstlisting}[language=C, caption={EXTI Callback for Input Detection}]
+		// Source: Core/Src/main.c
+		
+		void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+		{
+			uint32_t current_time = HAL_GetTick();
+			
+			switch (GPIO_Pin) {
+				case GPIO_PIN_12: // UP BUTTON
+				if (current_time - last_irq_time_up > 50) { // 1. Initial Debounce Filter
+					last_irq_time_up = current_time;
+					
+					if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) {
+						// Press Event
+						osTimerStart(timerUpHandle, 500); // 2. Start Confirmation Timer
+					} else {
+						// Release Event
+						osTimerStop(timerUpHandle); // Cancel if released too soon
+						// ... handle release logic
+					}
+				}
+				break;
+				// ... other pins ...
+			}
+		}
+	\end{lstlisting}
+	
+	\begin{lstlisting}[language=C, caption={FreeRTOS Timer Callback}]
+		// Source: Core/Src/main.c
+		
+		void CallbackTimerUp(void *argument)
+		{
+			// 3. Confirm Action (e.g. Hold Piece)
+			up_processed = 1;
+			uint8_t key = 'S';
+			osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+		}
+	\end{lstlisting}
 	
 	\section{Results and Conclusion}
 	
@@ -696,7 +748,7 @@
 	
 	\subsection{Future Improvements}
 	\begin{itemize}
-		\item Implement "Ghost Piece" visualization (indicated in design but currently simplified).
+		\item Make the UI fully navigatable with buttons.
 		\item Save high scores to internal Flash memory to persist after power loss.
 		\item Add support for using the on-board Gyroscope (SPI5) for experimental tilt controls.
 	\end{itemize}
