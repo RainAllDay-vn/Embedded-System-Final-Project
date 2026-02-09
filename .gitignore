@@ -39,3 +39,12 @@ MDK-ARM/*vguix.*
 # CMake
 build/*
 .kilocode/
+
+#Latex
+Report/*.aux
+Report/*.fdb_latexmk
+Report/*.fls
+Report/*.log
+Report/*.out
+Report/*.gz
+Report/*.toc

@@ -1,0 +1,756 @@
+\documentclass[12pt, a4paper]{article}
+
+% GÓI NGÔN NGỮ VÀ FONT
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{helvet} 
+\usepackage{color} % Thêm gói màu
+\usepackage{xcolor}
+\usepackage{tabularx} % Hỗ trợ bảng tự động chỉnh độ rộng cột
+\usepackage{booktabs} % Giúp đường kẻ bảng chuyên nghiệp hơn
+\usepackage{listings} % For code snippets
+\usepackage{float}
+\renewcommand{\arraystretch}{1.4} % Tăng khoảng cách giữa các dòng trong bảng
+
+% CODE LISTING STYLE
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\ttfamily\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                   
+	captionpos=b,                     
+	keepspaces=true,                   
+	numbers=left,                     
+	numbersep=5pt,                   
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                   
+	tabsize=2
+}
+\lstset{style=mystyle}
+
+% GÓI BỐ CỤC VÀ HÌNH ẢNH
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx} 
+\usepackage[hidelinks]{hyperref} 
+\usepackage{booktabs} 
+\usepackage{parskip} 
+\usepackage{float}
+\usepackage{fancyhdr} 
+\usepackage{titlesec} 
+\usepackage{longtable} % Cho bảng dài qua trang
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+
+% TÙY CHỈNH TIÊU ĐỀ SECTION
+\titleformat{\section}
+{\normalfont\Large\bfseries\color{blue!60!black}}
+{\thesection}{1em}{}
+\titleformat{\subsection}
+{\normalfont\large\bfseries\color{black}}
+{\thesubsection}{1em}{}
+
+% HỘP ĐỂ GIỮ CHỖ HÌNH ẢNH
+\newcommand{\imageplaceholder}[2]{
+	\begin{figure}[H]
+		\centering
+		\fbox{
+			\parbox[c][#1][c]{0.8\textwidth}{
+				\centering
+				\vspace{10pt}
+				\texttt{#2}
+				\vspace{10pt}
+			}
+		}
+		\caption{#2}
+	\end{figure}
+}
+
+% --- BẮT ĐẦU TÀI LIỆU ---
+\begin{document}
+	
+	% --- BẮT ĐẦU TRANG BÌA MỚI ---
+	\begin{titlepage}
+		\centering
+		\pagestyle{empty} % <-- Đảm bảo trang này không có header/footer
+		
+		% 1. Thông tin trường
+		{\Large \textbf{Hanoi University of Science and Technology}} \\
+		\vspace{0.2cm}
+		{\large School of Information and Communication Technology} \\
+		
+		\vspace{1.5cm}
+		
+		% 2. Logo
+		\includegraphics[width=0.3\textwidth]{images/logo_hust.png} \\
+		
+		\vspace{1.5cm}
+		
+		% 3. Tiêu đề chính
+		{\huge \textbf{Project Report: Game Tetris using STM32CubeIDE hardware and software}} \\
+		\vspace{1cm}
+		
+		% 4. Thông tin môn học
+		{\LARGE IT4210E - Embedded Systems} \\
+		\vspace{0.5cm}
+		
+		\vfill % <-- Đẩy nội dung bên dưới xuống
+		
+		% 6. Thông tin nhóm
+		{\Large \textbf{Group Members:}} \\
+		\vspace{0.5cm}
+		{\large
+			Group 5 - Class: 161346\\
+			Luong Ngoc Vu Long - 20235967\\
+			Tran Sy Nguyen - 20235985\\
+			Nguyen Vu Anh Khoa - 20235957
+		} \\ 
+		
+		\vspace{2cm}
+		
+		% 7. Giảng viên
+		{\Large \textbf{Lecturers:}} \\
+		\vspace{0.5cm}
+		{\large
+			Prof. Ngô Lam Trung
+		}
+		
+		\vfill % <-- Đẩy ngày tháng xuống dưới cùng
+		
+		% 8. Ngày tháng
+		{\large \today}
+		
+	\end{titlepage}
+	
+	\tableofcontents
+	\newpage
+	
+	\section{Introduction}
+	
+	The "Embedded Tetris" project aims to replicate the classic arcade experience on the STM32F429I-DISCO development board. By leveraging the high-performance ARM Cortex-M4 microcontroller, this project demonstrates the capability of modern embedded systems to handle real-time game logic, fluid graphical rendering, and multi-tasking.
+	
+	\subsection{Project Goals}
+	The primary objectives of this project are:
+	\begin{itemize}
+		\item \textbf{System Integration:} To successfully integrate FreeRTOS with the TouchGFX framework, creating a responsive and stable application environment where the GUI task and background logic run concurrently.
+		\item \textbf{Game Fidelity:} To implement the full functionality of the classic Tetris game, including:
+		\begin{itemize}
+			\item \textbf{Tetromino Logic:} Spawning of all seven standard Tetromino types (I, J, L, O, S, T, Z) with randomized generation.
+			\item \textbf{Movement and Rotation:} Precise control for horizontal movement, soft dropping, and piece rotation with collision detection.
+			\item \textbf{Matrix Management:} A 10x20 grid system for tracking settled pieces, performing line detection, and implementing line clearing.
+			\item \textbf{Scoring and Progression:} A scoring system based on line clears and a leveling system that increases game speed to provide progressive difficulty.
+			\item \textbf{User Experience:} Integration of a "Hold" piece mechanism, "Next" piece preview, and high score tracking for a complete gameplay experience.
+		\end{itemize}
+	\end{itemize}
+	
+	\subsection{Project Scope}
+	This project is confined to the following boundaries:
+	\begin{itemize}
+		\item \textbf{Hardware:} Strictly targeted for the STM32F429I-DISCO kit (STM32F429ZIT6 MCU).
+		\item \textbf{Input:} Control is limited to the on-board user button and external push buttons (via GPIO), or the capacitive touch screen.
+		\item \textbf{Output:} Visual elements are rendered on the built-in 2.4" QVGA display, and audio is output via a piezo buzzer connected to a PWM pin.
+		\item \textbf{Software:} The codebase is built using STM32CubeIDE, utilising the HAL library for hardware abstraction and FreeRTOS for task scheduling.
+	\end{itemize}
+	
+	\section{Hardware Design}
+	
+	\subsection{Development Board Specifications}
+	The project utilizes the STM32F429I-DISCO kit, which is built around the STM32F429ZIT6 microcontroller. Key specifications utilized in this project include:
+	\begin{itemize}
+		\item \textbf{Core:} ARM Cortex-M4 with FPU, running at 168 MHz (configured via PLL).
+		\item \textbf{Flash Memory:} 2 MB (Storing code and const assets like fonts/images).
+		\item \textbf{RAM:} 256 KB Internal SRAM + 64 Mbits External SDRAM (used for Frame Buffers).
+		\item \textbf{Display:} 2.4" QVGA TFT LCD via LTDC interface.
+	\end{itemize}
+	
+	\subsection{Peripheral Configuration}
+	
+	The hardware configuration is generated using STM32CubeMX (inside STM32CubeIDE).
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{images/system_configuration.png}
+		\caption{STM32CubeMX System and Peripheral Initialization Overview}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{images/pin_configuration.png}
+		\caption{STM32F429ZIT6 Pinout and GPIO Configuration}
+	\end{figure}
+	
+	\subsubsection{Display Subsystem (LTDC \& DMA2D)}
+	The Liquid Crystal Display (LCD) is driven by the LTDC (LCD-TFT Display Controller) peripheral. 
+	\begin{itemize}
+		\item \textbf{Interface:} RGB565 (16-bit color depth).
+		\item \textbf{Resolution:} 240 x 320 pixels.
+		\item \textbf{Memory:} Two frame buffers are allocated in the external SDRAM to support double buffering, preventing screen tearing.
+		\item \textbf{DMA2D:} Chrom-Art Accelerator is enabled to handle image copying and blending efficiently, offloading the CPU.
+	\end{itemize}
+	
+	\subsubsection{Audio Subsystem (PWM)}
+	Sound generation is achieved using Pulse Width Modulation (PWM) connected to a Piezo Buzzer.
+	\begin{itemize}
+		\item \textbf{Timer:} TIM10.
+		\item \textbf{Channel:} Channel 1.
+		\item \textbf{Prescaler:} 167 (resulting in a 1 MHz timer clock).
+		\item \textbf{Logic:} The frequency of the PWM signal controls the musical pitch (Note), and the duty cycle controls the volume.
+	\end{itemize}
+	
+	\subsubsection{Input Controls (GPIO \& EXTI)}
+	The game is controlled via four external push buttons connected to GPIO pins configured as external interrupts (EXTI).
+	
+	\begin{table}[h]
+		\centering
+		\begin{tabularx}{0.8\textwidth}{|c|X|c|c|}
+			\hline
+			\textbf{Function} & \textbf{Pin} & \textbf{Port} & \textbf{Mode} \\
+			\hline
+			Rotate Piece & Pin 12 & GPIOB & EXTI Rising/Falling \\
+			\hline
+			Move Right & Pin 13 & GPIOB & EXTI Rising/Falling \\
+			\hline
+			Soft Drop & Pin 2 & GPIOG & EXTI Rising/Falling \\
+			\hline
+			Move Left & Pin 3 & GPIOG & EXTI Rising/Falling \\
+			\hline
+		\end{tabularx}
+		\caption{GPIO Pin Mapping for Game Controls}
+	\end{table}
+	
+	\subsection{Random Number Generator (RNG)}
+	To ensure fair and unpredictable gameplay, the hardware Tetromino generation relies on the STM32's built-in Random Number Generator (RNG) peripheral. The peripheral requires a precise 48 MHz clock (PLL48CLK) and is configured to provide entropy for the piece spawning logic. Detailed implementation challenges regarding the clock tree configuration are discussed in Section 4.1.
+	
+	\section{Software Design}
+	
+	\subsection{Model-View-Presenter (MVP) Architecture}
+	The software architecture is centered around the Model-View-Presenter (MVP) pattern provided by the TouchGFX framework. This pattern ensures a strict separation of concerns between the visual interface, the underlying game logic, and the synchronization layer that connects them.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\textwidth]{images/mvp_architecture_diagram.png}
+		\caption{TouchGFX MVP Architecture and Class Hierarchy}
+	\end{figure}
+	
+	\begin{itemize}
+		\item \textbf{View:} Responsible for the visual representation and layout.
+		\item \textbf{Model:} Contains the core game state, rules, and mathematical logic.
+		\item \textbf{Presenter:} Acts as the mediator, handling events from the View and updating the Model, or reflecting Model changes back to the View.
+	\end{itemize}
+	
+	\subsection{The View: User Interface}
+	
+	The View layer is responsible for the visual presentation of the game and handling user interactions. Built on the TouchGFX framework, it strictly follows the Model-View-Presenter (MVP) pattern, ensuring that the graphical interface is decoupled from the core game logic.
+	
+	\subsubsection{Main Menu}
+	
+	The Main Menu (`MainView`) serves as the entry point for the application. It is designed to be visually engaging while providing clear navigation options.
+	
+	\textbf{Visual Elements:}
+	\begin{itemize}
+		\item \textbf{Background:} The screen uses a deep "Oxford Blue" color (\#0A1128) to set a retro atmosphere.
+		\item \textbf{Dynamic Animation:} To make the menu alive, semi-transparent Tetromino blocks fall in the background at varying speeds. This is implemented in the `handleTickEvent` function, which updates the vertical position of each block every frame.
+		\item \textbf{Interactive Components:} The menu features "New Game" and "High Scores" buttons. A High Score Modal pops up to display the top records when requested.
+	\end{itemize}
+	
+	\textbf{Code Implementation:}
+	The following code snippet demonstrates the initialization of the animated background blocks in `MainViewView::setupScreen`:
+	
+	\begin{lstlisting}[language=C++, caption={Main Menu Background Animation Setup}]
+		// Source: TouchGFX/gui/src/mainview_screen/MainViewView.cpp
+		
+		void MainViewView::setupScreen()
+		{
+			MainViewViewBase::setupScreen();
+			SoundEngine_PlayTrack(TRACK_MENU);
+			
+			// 1. Background (Oxford Blue #0A1128)
+			background.setPosition(0, 0, 240, 320);
+			background.setColor(touchgfx::Color::getColorFromRGB(0x0A, 0x11, 0x28));
+			add(background);
+			
+			// ... (Logo and Buttons setup omitted) ...
+			
+			// 2. Decoration: Random floating blocks
+			touchgfx::BitmapId blocks[] = {
+				BITMAP_BLOCK_I_ID, BITMAP_BLOCK_J_ID, BITMAP_BLOCK_L_ID,
+				BITMAP_BLOCK_O_ID, BITMAP_BLOCK_S_ID, BITMAP_BLOCK_T_ID, BITMAP_BLOCK_Z_ID
+			};
+			
+			for (int i = 0; i < 10; i++)
+			{
+				backgroundBlocks[i].setBitmap(touchgfx::Bitmap(blocks[i % 7]));
+				int x = getRandom(228);
+				int y = getRandom(400) - 100; // Random start position
+				backgroundBlocks[i].setXY(x, y);
+				backgroundBlocks[i].setAlpha(40); // Subtle transparency
+				backgroundBlockSpeeds[i] = 1 + getRandom(3); // Random speed
+				insert(&background, backgroundBlocks[i]);
+			}
+		}
+	\end{lstlisting}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[scale=0.9]{images/main_menu_high_score.png}
+		\caption{Screenshot of Main Menu with High Score Medal}
+	\end{figure}
+	
+	\subsubsection{Game Screen}
+	
+	The Game Screen (`GameView`) is the core interface where gameplay occurs. It is optimized to render the game state at 60 FPS by selectively updating only the graphical elements that have changed.
+	
+	\textbf{Screen Layout:}
+	The layout is divided into three main sections to maximize the 240x320 resolution:
+	\begin{itemize}
+		\item \textbf{Central Matrix:} A 120x240 pixel container displaying the game grid. It renders the fixed blocks, the falling active piece, and the "Ghost Piece" (a visual guide showing where the piece will land).
+		\item \textbf{Left Sidebar:} Displays the "HOLD" piece, current Level, and Lines cleared.
+		\item \textbf{Right Sidebar:} Displays the "NEXT" piece preview, Score, and the Goal for the next level.
+	\end{itemize}
+	
+	\textbf{Rendering Logic:}
+	The `updateBoard` function acts as the main rendering loop. It synchronizes the visual state with the data from the Presenter. To optimize performance, the system uses a pool of `touchgfx::Image` widgets (`fixedBlocks`, `fallingBlocks`, `ghostBlocks`) rather than creating new objects dynamically.
+	
+	\begin{lstlisting}[language=C++, caption={GameView Board Rendering Logic}]
+		// Source: TouchGFX/gui/src/gameview_screen/GameViewView.cpp
+		
+		void GameViewView::updateBoard()
+		{
+			// 1. Synchronize Grid (Fixed Blocks)
+			for (int y = 0; y < MATRIX_ROWS; y++)
+			{
+				for (int x = 0; x < MATRIX_COLS; x++)
+				{
+					signed char type = presenter->getGridValue(x, y);
+					if (type >= 0 && type < Tetris::COUNT)
+					{
+						fixedBlocks[y][x].setBitmap(touchgfx::Bitmap(blockBitmaps[type]));
+						fixedBlocks[y][x].setVisible(true);
+					}
+					else
+					{
+						fixedBlocks[y][x].setVisible(false);
+					}
+					fixedBlocks[y][x].invalidate(); // Mark for redraw
+				}
+			}
+			
+			// 2. Draw Active Piece and Ghost Piece
+			Tetris::TetrominoType currentType = presenter->getCurrentPieceType();
+			if (currentType != Tetris::NONE)
+			{
+				// Draw Ghost Piece
+				int ghostY = presenter->getGhostY();
+				if (ghostY > presenter->getCurrentY())
+				{
+					drawPiece(currentType, 
+					presenter->getCurrentX(), 
+					ghostY, 
+					presenter->getCurrentRotation(), 
+					ghostBlocks, 2, 2);
+				}
+				
+				// Draw Falling Piece
+				drawPiece(currentType, 
+				presenter->getCurrentX(), 
+				presenter->getCurrentY(), 
+				presenter->getCurrentRotation(), 
+				fallingBlocks, 2, 2);
+			}
+		}
+	\end{lstlisting}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[scale=0.9]{images/active_gameplay.png}
+		\caption{Screenshot of GameView with Active Gameplay}
+	\end{figure}
+	
+	\subsection{The Presenter: UI-Model Sychnorization}
+	
+	The Presenter acts as the "middleman" in the MVP architecture, bridging the gap between the Game Model and the View. It ensures that the Model remains completely unaware of the UI implementation details, while the View remains passive and data-driven.
+	
+	\textbf{Responsibilities:}
+	\begin{itemize}
+		\item \textbf{Data Formatting:} The Presenter retrieves raw data from the Model (e.g., integer scores) and formats it into structures the View can easily consume (e.g., sorted leaderboards).
+		\item \textbf{Event Handling:} It listens for UI events (like button clicks) and forwards actionable commands to the Model.
+		\item \textbf{State Synchronization:} Implementing the `ModelListener` interface, it receives notifications when the game state changes (e.g., board updates, game over) and instructs the View to repaint.
+	\end{itemize}
+	
+	\textbf{Code Implementation:}
+	A key example of the Presenter's logic is the `getScoreboard` method in `GameViewPresenter`. It combines the persistent high scores from the Model with the current session's score and sorts them to display a dynamic ranking on the "Game Over" screen.
+	
+	\begin{lstlisting}[language=C++, caption={Scoreboard Sorting Logic in Presenter}]
+		// Source: TouchGFX/gui/src/gameview_screen/GameViewPresenter.cpp
+		
+		void GameViewPresenter::getScoreboard(ScoreInfo* buffer)
+		{
+			// 1. Retrieve raw data from Model
+			int highScores[3];
+			model->getHighScores(highScores);
+			int currentScore = model->getScore();
+			
+			// 2. Populate buffer
+			for(int i=0; i<3; i++) {
+				buffer[i].score = highScores[i];
+				buffer[i].isCurrent = false;
+			}
+			buffer[3].score = currentScore;
+			buffer[3].isCurrent = true;
+			
+			// 3. Sort Descending (Bubble Sort for small dataset)
+			for(int i=0; i<3; i++)
+			{
+				for(int j=0; j<3-i; j++)
+				{
+					if (buffer[j].score < buffer[j+1].score)
+					{
+						ScoreInfo temp = buffer[j];
+						buffer[j] = buffer[j+1];
+						buffer[j+1] = temp;
+					}
+				}
+			}
+		}
+	\end{lstlisting}
+	
+	\subsection{The Model: Game Logic}
+	
+	The Model class encapsulates the entire state of the Tetris game, operating independently of the View and Presenter. This ensures that the game rules—including gravity, collisions, and scoring—remain consistent regardless of the visual representation. At its core, the game field is represented by a 2D array, \texttt{grid[20][10]}, where each cell stores a value corresponding to the type of Tetromino occupying it, or \texttt{-1} if the cell is empty.
+	
+	\subsubsection{The Game Loop (Tick)}
+	
+	The \texttt{tick()} function serves as the "heartbeat" of the game. It is triggered periodically by the TouchGFX framework based on the current game speed. This loop manages the progression of the game through several key phases:
+	
+	\begin{itemize}
+	    \item \textbf{Gravity:} The system tracks time using a \texttt{tickCounter}. When it reaches the \texttt{dropSpeed} threshold, the current piece is moved down one row.
+	    \item \textbf{Collision Detection:} Before any movement or rotation, the \texttt{isCollision()} method checks the proposed coordinates against the grid boundaries and existing blocks.
+	    \item \textbf{Landing and Locking:} If a downward move results in a collision, the piece is "locked" into the static grid, and a new piece is spawned.
+	    \item \textbf{Line Clearing:} Immediately after locking a piece, the system scans the grid. If a row is full, it is cleared, and blocks above it are shifted down.
+	\end{itemize}
+	
+	\begin{lstlisting}[language=C++, caption={Game Loop Core Logic (Simplified)}]
+	void Model::tick()
+	{
+	    if (isGameOver || isPaused) return;
+
+	    // 1. Gravity Logic
+	    tickCounter++;
+	    if (tickCounter >= dropSpeed)
+	    {
+	        tickCounter = 0;
+	        step(); // Attempt to move piece down
+	    }
+	    
+	    // ... Input Processing (See Section 3.4.2) ...
+	    
+	    // 2. Notify UI of changes
+	    if (modelListener != 0)
+	    {
+	        modelListener->modelStateChanged();
+	    }
+	}
+	\end{lstlisting}
+	
+	\subsubsection{Input Processing}
+	
+	User interaction is handled asynchronously to ensure responsiveness. Inputs generated via GPIO interrupts (buttons) or the Touch interface are converted into commands and sent to the Model through a FreeRTOS message queue (\texttt{inputQueueHandle}).
+	
+	During each execution of the \texttt{tick()} function, the Model drains this queue and executes the corresponding operations:
+	
+	\begin{itemize}
+	    \item \textbf{Queue Integration:} The code uses \texttt{osMessageQueueGet} to retrieve pending commands without blocking the GUI task.
+	    \item \textbf{Command Flow:}
+	    \begin{itemize}
+	        \item \texttt{'U'}: Rotate the piece.
+	        \item \texttt{'L' / 'R'}: Move the piece left or right.
+	        \item \texttt{'D'}: Soft Drop (one step down).
+	        \item \texttt{'H'}: Hard Drop (snap to bottom).
+	        \item \texttt{'S'}: Hold the current piece.
+	    \end{itemize}
+	\end{itemize}
+	
+	\begin{lstlisting}[language=C++, caption={Input Processing Logic in Model}]
+	// Processing Input Queue from FreeRTOS
+	#ifndef SIMULATOR
+	uint8_t key = 0;
+	while (osMessageQueueGet(inputQueueHandle, &key, NULL, 0) == osOK)
+	{
+	    switch (key)
+	    {
+	        case 'U': rotate(); break;
+	        case 'R': moveRight(); break;
+	        case 'D': step(); break;
+	        case 'L': moveLeft(); break;
+	        case 'H': hardDrop(); break;
+	        case 'S': holdPiece(); break;
+	    }
+	}
+	#endif
+	\end{lstlisting}
+	
+	\subsubsection{Collision Detection \& Mechanics}
+	
+	To prevent pieces from moving through walls or other blocks, the `isCollision` method checks the target coordinates of every block in the active Tetromino against the grid boundaries and existing occupied cells.
+	
+	When a piece lands (collision detected on `step()`), the `lockPiece()` method transfers the active piece into the static `grid` array and immediately triggers `checkLines()`.
+	
+	\subsubsection{Line Clearing Algorithm}
+	
+	The `checkLines()` method scans the grid from bottom to top. If a row is fully occupied (no `-1` values), it is cleared, and all rows above it are shifted down. This method also calculates the score based on the number of lines cleared simultaneously (100, 300, 500, or 800 points).
+	
+	\begin{lstlisting}[language=C++, caption={Line Clearing Logic}]
+		// Source: TouchGFX/gui/src/model/Model.cpp
+		
+		void Model::checkLines()
+		{
+			int clearedInThisStep = 0;
+			
+			for (int y = 19; y >= 0; y--)
+			{
+				bool isFull = true;
+				for (int x = 0; x < 10; x++)
+				{
+					if (grid[y][x] == -1) // -1 means empty
+					{
+						isFull = false;
+						break;
+					}
+				}
+				
+				if (isFull)
+				{
+					clearedInThisStep++;
+					// Shift everything above down
+					for (int shiftY = y; shiftY > 0; shiftY--)
+					{
+						for (int x = 0; x < 10; x++)
+						{
+							grid[shiftY][x] = grid[shiftY - 1][x];
+						}
+					}
+					// Clear top line
+					for (int x = 0; x < 10; x++) grid[0][x] = -1;
+					
+					// Re-check this same Y index since it now contains new data
+					y++;
+				}
+			}
+			
+			// Update Score and Level
+			if (clearedInThisStep > 0)
+			{
+				int points[] = {0, 100, 300, 500, 800};
+				score += points[clearedInThisStep] * level;
+			}
+		}
+	\end{lstlisting}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[scale=0.08]{images/flowchart.png}
+		\caption{Flowchart of the Game Logic (Tick Execution)}
+	\end{figure}
+	
+	
+	\subsection{System Integration (RTOS \& Audio)}
+	The application logic rests upon a robust real-time foundation powered by FreeRTOS. This architecture ensures deterministic behavior by managing hardware resources and asynchronous background tasks effectively, allowing the STM32F429 to handle graphics rendering and audio synthesis concurrently without blocking.
+	
+	\subsubsection{FreeRTOS Task Management}
+	To ensure smooth operation and responsiveness, the system is divided into three primary tasks. The scheduling policy is preemptive, ensuring that time-critical operations (like UI updates) take precedence over background activities.
+	
+	The task allocation is detailed in Table \ref{tab:rtos_tasks}:
+	
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{|l|l|l|l|}
+			\hline
+			\textbf{Task Name} & \textbf{Priority} & \textbf{Stack Size} & \textbf{Functionality} \\ \hline
+			\texttt{GUI\_Task} & Normal & 8192 words & Executes TouchGFX engine and MVP logic. \\ \hline
+			\texttt{DefaultTask} & Normal & 128 words & Handles physical button polling (debouncing). \\ \hline
+			\texttt{SoundTask} & Low & 256 words & Processes background music and SFX. \\ \hline
+		\end{tabular}
+		\caption{FreeRTOS Task Configuration}
+		\label{tab:rtos_tasks}
+	\end{table}
+	
+	\begin{itemize}
+		\item \textbf{GUI\_Task:} Being the heaviest consumer of CPU cycles, this task drives the display updates. It integrates with the TouchGFX framework to render the Tetris grid and animations.
+		\item \textbf{SoundTask:} Configured with \textit{Low Priority} to prevent audio processing from stuttering the graphical interface. It utilizes `osDelay` to manage note duration, yielding CPU time back to the scheduler during silence or sustained notes.
+	\end{itemize}
+	
+	\subsubsection{Audio Engine Implementation}
+	The audio subsystem is implemented using the STM32's hardware timer (TIM10) in Pulse Width Modulation (PWM) mode. The system generates sound by manipulating the frequency of the square wave output on pin \textbf{PF6}.
+	
+	\textbf{Frequency Calculation:}
+	The Timer is clocked at $1\text{MHz}$ ($1\mu s$ per tick). To generate a specific musical note frequency ($f_{note}$), the Auto-Reload Register (ARR) is dynamically updated using the formula:
+	\begin{equation}
+		\text{ARR} = \frac{f_{timer}}{f_{note}} - 1 = \frac{1,000,000}{f_{note}} - 1
+	\end{equation}
+	To maintain a consistent volume, the Pulse width (CCR) is always set to 50\% of the ARR ($CCR = ARR / 2$).
+	
+	\subsubsection{Source Code Implementation}
+	The implementation consists of a low-level driver for frequency generation and a high-level RTOS task for sequencing the melody (e.g., Mario Theme).
+	
+	\textbf{1. Low-Level PWM Driver:}
+	This function directly manipulates the hardware timer registers to change the pitch.
+	
+	\begin{lstlisting}[language=C, caption=Buzzer Frequency Control Function, label=lst:buzzer_ctrl]
+		/* Sets the PWM frequency for the passive buzzer */
+		void Buzzer_SetFrequency(uint32_t freq)
+		{
+			if (freq == 0) {
+				// Stop PWM generation for silence/rests
+				__HAL_TIM_SET_COMPARE(&htim10, TIM_CHANNEL_1, 0);
+				return;
+			}
+			
+			// Calculate period based on 1MHz Timer Clock
+			uint32_t period = (1000000 / freq) - 1;
+			
+			// Update Auto-Reload Register (Frequency)
+			__HAL_TIM_SET_AUTORELOAD(&htim10, period);
+			
+			// Update Capture Compare Register (50% Duty Cycle)
+			__HAL_TIM_SET_COMPARE(&htim10, TIM_CHANNEL_1, period / 2);
+		}
+	\end{lstlisting}
+	
+	\textbf{2. RTOS Music Task:}
+	The \texttt{SoundTask} iterates through predefined arrays of notes and durations. It uses `osDelay` to maintain precise timing without blocking the CPU.
+	
+	\begin{lstlisting}[language=C, caption=RTOS Task for Background Music, label=lst:sound_task]
+		void SoundEngineTask(void *argument)
+		{
+			// Ensure PWM is started on Channel 1
+			HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+			
+			uint32_t i = 0;
+			// Calculate total notes in the melody
+			const uint32_t len = sizeof(mario_notes)/sizeof(mario_notes[0]);
+			
+			for (;;) // Infinite Loop
+			{
+				if (mario_notes[i] == 0) {
+					Buzzer_Stop(); // Handle Rests
+				} else {
+					Buzzer_SetFrequency(mario_notes[i]); // Play Note
+				}
+				
+				// Non-blocking delay for note duration
+				osDelay(mario_durations[i]);
+				
+				// Loop the melody
+				i++;
+				if (i >= len) i = 0;
+			}
+		}
+	\end{lstlisting}
+	
+	\section{System Integration \& Challenges}
+	
+	\subsection{Clock Tree Configuration for RNG}
+	A significant challenge during hardware integration was the 48 MHz clock requirement for the RNG. The STM32F429 reaches its maximum performance at a SysClk of 180 MHz, but the Main PLL cannot generate both 180 MHz and 48 MHz simultaneously due to integer divider limitations. 
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.9\textwidth]{images/clock_configuration.png}
+		\caption{Final Clock Configuration (168 MHz SysClk, 48 MHz PLL48CLK)}
+	\end{figure}
+	
+	\begin{itemize}
+		\item \textbf{The Issue:} At 180 MHz (VCO = 360 MHz), the PLLQ divider would need to be 7.5 to reach 48 MHz, which is not supported. Deviations from 48 MHz lead to peripheral initialization failure and "Clock Error" flags.
+		\item \textbf{The Solution:} We adjusted the system clock to 168 MHz (PLLM=8, PLLN=336, PLLP=2, PLLQ=7).
+		\item \textbf{VCO Calculation:} $(8\text{ MHz} / 8) \times 336 = 336\text{ MHz}$.
+		\item \textbf{Resulting Clocks:} SysClk = $336\text{ MHz} / 2 = 168\text{ MHz}$; RNG Clock = $336\text{ MHz} / 7 = 48\text{ MHz}$ (Exact).
+	\end{itemize}
+
+	\subsection{BSP Driver Integration}
+	
+	A significant workflow challenge encountered was the manual integration of Board Support Package (BSP) drivers for the STM32F429I-DISCO's SDRAM and LCD.
+	
+	\begin{itemize}
+		\item \textbf{Problem:} The STM32CubeMX code generator does not automatically include specific BSP drivers (e.g., \lstinline|stm32f429i_discovery_sdram.c|) required to initialize the external memory, even when the interface is enabled in the GUI. The generated code initializes the FMC peripheral but leaves the specific SDRAM startup sequence (Clock Enable, PALL, Refresh Rate) unimplemented.
+		\item \textbf{Solution:} We had to manually copy the necessary BSP files into the project structure and modify the build paths.
+	\end{itemize}
+	
+	\subsection{Input Debouncing}
+	Directly reading GPIO pins caused erratic behavior due to mechanical switch bounce ("chattering").
+	
+	To mitigate this, we implemented a software debouncing strategy using FreeRTOS Timers and Interrupts:
+	\begin{enumerate}
+		\item \textbf{Interrupt Trigger:} When a button press (rising/falling edge) is detected, the \lstinline|HAL_GPIO_EXTI_Callback| function is triggered.
+		\item \textbf{Timestamp Check:} To prevent multiple immediate triggers, we check if sufficient time (e.g., 50ms) has passed since the last interrupt (\lstinline|current_time - last_irq_time_up > 50|).
+		\item \textbf{Timer Start:} If valid, we start a FreeRTOS One-Shot Timer (\lstinline|timerUpHandle|) with a 500ms delay. This acts as a confirmation period.
+		\item \textbf{Timer Callback (Confirmation):} When the timer expires, the \lstinline|CallbackTimerUp| function executes. It confirms the input is deliberate and pushes the action command to the \lstinline|inputQueue|.
+	\end{enumerate}
+	
+	\begin{lstlisting}[language=C, caption={EXTI Callback for Input Detection}]
+		// Source: Core/Src/main.c
+		
+		void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+		{
+			uint32_t current_time = HAL_GetTick();
+			
+			switch (GPIO_Pin) {
+				case GPIO_PIN_12: // UP BUTTON
+				if (current_time - last_irq_time_up > 50) { // 1. Initial Debounce Filter
+					last_irq_time_up = current_time;
+					
+					if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_12) == GPIO_PIN_RESET) {
+						// Press Event
+						osTimerStart(timerUpHandle, 500); // 2. Start Confirmation Timer
+					} else {
+						// Release Event
+						osTimerStop(timerUpHandle); // Cancel if released too soon
+						// ... handle release logic
+					}
+				}
+				break;
+				// ... other pins ...
+			}
+		}
+	\end{lstlisting}
+	
+	\begin{lstlisting}[language=C, caption={FreeRTOS Timer Callback}]
+		// Source: Core/Src/main.c
+		
+		void CallbackTimerUp(void *argument)
+		{
+			// 3. Confirm Action (e.g. Hold Piece)
+			up_processed = 1;
+			uint8_t key = 'S';
+			osMessageQueuePut(inputQueueHandle, &key, 0, 0);
+		}
+	\end{lstlisting}
+	
+	\section{Results and Conclusion}
+	
+	\subsection{Project Outcomes}
+	The project successfully delivers a playable Tetris clone on the STM32F429I-DISCO.
+	\begin{itemize}
+		\item Performance: The game runs at a stable 60 FPS.
+		\item Audio: Background music plays smoothly without interrupting game logic.
+		\item Gameplay: All standard Tetris rules (rotation, wall kicks, line clears, leveling) are implemented.
+	\end{itemize}
+	
+	\subsection{Future Improvements}
+	\begin{itemize}
+		\item Make the UI fully navigatable with buttons.
+		\item Save high scores to internal Flash memory to persist after power loss.
+		\item Add support for using the on-board Gyroscope (SPI5) for experimental tilt controls.
+	\end{itemize}
+	
+\end{document}
